@@ -1,11 +1,24 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Users, AlertTriangle, Activity, TrendingUp, Layout } from 'lucide-react-native';
-import { getDashboardScreenStyles } from '@/styles/dashboard.styles';
-import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
-import { LineChart, PieChart } from 'react-native-chart-kit';
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  useColorScheme,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Users,
+  AlertTriangle,
+  Activity,
+  TrendingUp,
+  Layout,
+} from "lucide-react-native";
+import { getDashboardScreenStyles } from "@/styles/dashboard.styles";
+import { useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
+import { LineChart, PieChart } from "react-native-chart-kit";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -28,17 +41,24 @@ interface AssessmentRecord {
 
 // --- Mock Data ---
 const recentAssessments: AssessmentRecord[] = [
-  { id: '1', name: 'Sarah Johnson', age: 28, bp: '115/75' },
-  { id: '2', name: 'Maria Garcia', age: 38, bp: '145/95' },
-  { id: '3', name: 'Emily Chen', age: 25, bp: '122/82' },
-  { id: '4', name: 'Aisha Patel', age: 32, bp: '135/88' },
-  { id: '5', name: 'Jessica Williams', age: 22, bp: '110/70' },
+  { id: "1", name: "Sarah Johnson", age: 28, bp: "115/75" },
+  { id: "2", name: "Maria Garcia", age: 38, bp: "145/95" },
+  { id: "3", name: "Emily Chen", age: 25, bp: "122/82" },
+  { id: "4", name: "Aisha Patel", age: 32, bp: "135/88" },
+  { id: "5", name: "Jessica Williams", age: 22, bp: "110/70" },
 ];
 
 // --- Components ---
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, valueColor = '#0F172A', subtitle, icon, iconBgColor }) => {
-  const colorScheme = useColorScheme() ?? 'light';
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  valueColor = "#0F172A",
+  subtitle,
+  icon,
+  iconBgColor,
+}) => {
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getDashboardScreenStyles(colorScheme);
   return (
     <View style={styles.statCard}>
@@ -55,27 +75,56 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, valueColor = '#0F172A
 };
 
 const DashboardScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getDashboardScreenStyles(colorScheme);
   const navigation = useNavigation();
-
+  // useEffect(() => {
+  //   const API_URL = "http://10.174.203.104/predict";
+  //   fetch(API_URL, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       pheinz_physiological_data: [31, 90, 60, 7.1, 90, 66],
+  //     }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       console.log(data.prediction);
+  //     })
+  //     .catch((error) => {
+  //       console.error("Connection error: ", error);
+  //     });
+  // }, []);
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Header Section - Fixed at top */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.headerIcon}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Layout color={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'} size={24} />
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Overview of maternal health monitoring</Text>
+          <Text style={styles.headerSubtitle}>
+            Overview of maternal health monitoring
+          </Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Stats Row Section (Horizontally Scrollable) */}
         <ScrollView
           horizontal
@@ -119,28 +168,31 @@ const DashboardScreen: React.FC = () => {
         <View style={styles.cardContainer}>
           <Text style={styles.cardTitle}>Risk Distribution</Text>
 
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ alignItems: "center", justifyContent: "center" }}>
             <PieChart
               data={[
                 {
-                  name: 'Low Risk',
+                  name: "Low Risk",
                   population: 4,
-                  color: '#10B981',
-                  legendFontColor: colorScheme === 'dark' ? '#ECEDEE' : '#64748B',
+                  color: "#10B981",
+                  legendFontColor:
+                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
                   legendFontSize: 12,
                 },
                 {
-                  name: 'Medium Risk',
+                  name: "Medium Risk",
                   population: 2,
-                  color: '#F59E0B',
-                  legendFontColor: colorScheme === 'dark' ? '#ECEDEE' : '#64748B',
+                  color: "#F59E0B",
+                  legendFontColor:
+                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
                   legendFontSize: 12,
                 },
                 {
-                  name: 'High Risk',
+                  name: "High Risk",
                   population: 2,
-                  color: '#EF4444',
-                  legendFontColor: colorScheme === 'dark' ? '#ECEDEE' : '#64748B',
+                  color: "#EF4444",
+                  legendFontColor:
+                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
                   legendFontSize: 12,
                 },
               ]}
@@ -161,24 +213,51 @@ const DashboardScreen: React.FC = () => {
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
               <View style={styles.legendLabelRow}>
-                <View style={[styles.legendColorBox, { backgroundColor: '#10B981' }]} />
-                <Text style={[styles.legendText, { color: '#10B981' }]}>Low Risk</Text>
+                <View
+                  style={[
+                    styles.legendColorBox,
+                    { backgroundColor: "#10B981" },
+                  ]}
+                />
+                <Text style={[styles.legendText, { color: "#10B981" }]}>
+                  Low Risk
+                </Text>
               </View>
-              <Text style={[styles.legendValue, { color: '#10B981' }]}>50%</Text>
+              <Text style={[styles.legendValue, { color: "#10B981" }]}>
+                50%
+              </Text>
             </View>
             <View style={styles.legendItem}>
               <View style={styles.legendLabelRow}>
-                <View style={[styles.legendColorBox, { backgroundColor: '#F59E0B' }]} />
-                <Text style={[styles.legendText, { color: '#F59E0B' }]}>Medium Risk</Text>
+                <View
+                  style={[
+                    styles.legendColorBox,
+                    { backgroundColor: "#F59E0B" },
+                  ]}
+                />
+                <Text style={[styles.legendText, { color: "#F59E0B" }]}>
+                  Medium Risk
+                </Text>
               </View>
-              <Text style={[styles.legendValue, { color: '#F59E0B' }]}>25%</Text>
+              <Text style={[styles.legendValue, { color: "#F59E0B" }]}>
+                25%
+              </Text>
             </View>
             <View style={styles.legendItem}>
               <View style={styles.legendLabelRow}>
-                <View style={[styles.legendColorBox, { backgroundColor: '#EF4444' }]} />
-                <Text style={[styles.legendText, { color: '#EF4444' }]}>High Risk</Text>
+                <View
+                  style={[
+                    styles.legendColorBox,
+                    { backgroundColor: "#EF4444" },
+                  ]}
+                />
+                <Text style={[styles.legendText, { color: "#EF4444" }]}>
+                  High Risk
+                </Text>
               </View>
-              <Text style={[styles.legendValue, { color: '#EF4444' }]}>25%</Text>
+              <Text style={[styles.legendValue, { color: "#EF4444" }]}>
+                25%
+              </Text>
             </View>
           </View>
         </View>
@@ -202,51 +281,71 @@ const DashboardScreen: React.FC = () => {
                 {
                   data: [95, 98, 92, 105, 102, 110, 96], // Blood Sugar
                   color: (opacity = 1) => `rgba(245, 158, 11, ${opacity})`, // Orange
-                }
-              ]
+                },
+              ],
             }}
-            width={screenWidth - 72} 
+            width={screenWidth - 72}
             height={220}
             withDots={true}
             withShadow={false}
             withInnerLines={true}
             chartConfig={{
-              backgroundColor: colorScheme === 'dark' ? '#151718' : '#FFFFFF',
-              backgroundGradientFrom: colorScheme === 'dark' ? '#151718' : '#FFFFFF',
-              backgroundGradientTo: colorScheme === 'dark' ? '#151718' : '#FFFFFF',
+              backgroundColor: colorScheme === "dark" ? "#151718" : "#FFFFFF",
+              backgroundGradientFrom:
+                colorScheme === "dark" ? "#151718" : "#FFFFFF",
+              backgroundGradientTo:
+                colorScheme === "dark" ? "#151718" : "#FFFFFF",
               decimalPlaces: 0,
-              color: (opacity = 1) => colorScheme === 'dark' ? `rgba(155, 161, 166, ${opacity})` : `rgba(148, 163, 184, ${opacity})`, // Grid color
-              labelColor: (opacity = 1) => colorScheme === 'dark' ? `rgba(236, 237, 238, ${opacity})` : `rgba(100, 116, 139, ${opacity})`, // Text color
+              color: (opacity = 1) =>
+                colorScheme === "dark"
+                  ? `rgba(155, 161, 166, ${opacity})`
+                  : `rgba(148, 163, 184, ${opacity})`, // Grid color
+              labelColor: (opacity = 1) =>
+                colorScheme === "dark"
+                  ? `rgba(236, 237, 238, ${opacity})`
+                  : `rgba(100, 116, 139, ${opacity})`, // Text color
               propsForDots: {
                 r: "4",
                 strokeWidth: "2",
-                stroke: colorScheme === 'dark' ? '#151718' : "#FFFFFF"
+                stroke: colorScheme === "dark" ? "#151718" : "#FFFFFF",
               },
               style: {
-                borderRadius: 16
-              }
+                borderRadius: 16,
+              },
             }}
             bezier // Adds the smooth curve to the line
             style={{
               marginVertical: 8,
               borderRadius: 16,
-              marginLeft: -16 
+              marginLeft: -16,
             }}
           />
 
           {/* Line Chart Legend */}
           <View style={styles.lineLegendContainer}>
             <View style={styles.legendItem}>
-              <Text style={[styles.lineLegendMarker, { color: '#3B82F6' }]}>—○—</Text>
-              <Text style={[styles.legendText, { color: '#3B82F6' }]}>Avg BP</Text>
+              <Text style={[styles.lineLegendMarker, { color: "#3B82F6" }]}>
+                —○—
+              </Text>
+              <Text style={[styles.legendText, { color: "#3B82F6" }]}>
+                Avg BP
+              </Text>
             </View>
             <View style={styles.legendItem}>
-              <Text style={[styles.lineLegendMarker, { color: '#10B981' }]}>—○—</Text>
-              <Text style={[styles.legendText, { color: '#10B981' }]}>Avg Heart Rate</Text>
+              <Text style={[styles.lineLegendMarker, { color: "#10B981" }]}>
+                —○—
+              </Text>
+              <Text style={[styles.legendText, { color: "#10B981" }]}>
+                Avg Heart Rate
+              </Text>
             </View>
             <View style={styles.legendItem}>
-              <Text style={[styles.lineLegendMarker, { color: '#F59E0B' }]}>—○—</Text>
-              <Text style={[styles.legendText, { color: '#F59E0B' }]}>Avg Blood Sugar</Text>
+              <Text style={[styles.lineLegendMarker, { color: "#F59E0B" }]}>
+                —○—
+              </Text>
+              <Text style={[styles.legendText, { color: "#F59E0B" }]}>
+                Avg Blood Sugar
+              </Text>
             </View>
           </View>
         </View>
@@ -262,7 +361,9 @@ const DashboardScreen: React.FC = () => {
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, styles.colPatient]}>Patient</Text>
+            <Text style={[styles.tableHeaderText, styles.colPatient]}>
+              Patient
+            </Text>
             <Text style={[styles.tableHeaderText, styles.colAge]}>Age</Text>
             <Text style={[styles.tableHeaderText, styles.colBP]}>BP</Text>
           </View>
@@ -273,16 +374,29 @@ const DashboardScreen: React.FC = () => {
               key={record.id}
               style={[
                 styles.tableRow,
-                index === recentAssessments.length - 1 && { borderBottomWidth: 0 } // Hide border on last item
+                index === recentAssessments.length - 1 && {
+                  borderBottomWidth: 0,
+                }, // Hide border on last item
               ]}
             >
-              <Text style={[styles.tableRowText, styles.colPatient, styles.patientNameText]}>{record.name}</Text>
-              <Text style={[styles.tableRowText, styles.colAge]}>{record.age}</Text>
-              <Text style={[styles.tableRowText, styles.colBP]}>{record.bp}</Text>
+              <Text
+                style={[
+                  styles.tableRowText,
+                  styles.colPatient,
+                  styles.patientNameText,
+                ]}
+              >
+                {record.name}
+              </Text>
+              <Text style={[styles.tableRowText, styles.colAge]}>
+                {record.age}
+              </Text>
+              <Text style={[styles.tableRowText, styles.colBP]}>
+                {record.bp}
+              </Text>
             </View>
           ))}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
