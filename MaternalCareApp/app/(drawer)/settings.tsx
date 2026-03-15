@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   Switch,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Bell,
   Shield,
@@ -17,58 +17,66 @@ import {
   ChevronRight,
   LogOut,
   Layout,
-  Mail
-} from 'lucide-react-native';
-import { getSettingsScreenStyles } from '@/styles/settings.styles';
-import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+  Mail,
+} from "lucide-react-native";
+import { getSettingsScreenStyles } from "@/styles/settings.styles";
+import { useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
+import { useAuth } from "@/context/authContext";
 
 // --- Reusable Setting Row Component ---
 interface SettingRowProps {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  type?: 'link' | 'toggle';
+  type?: "link" | "toggle";
   value?: boolean;
   onToggle?: (val: boolean) => void;
   onPress?: () => void;
   isDestructive?: boolean;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
 }
 
 const SettingRow: React.FC<SettingRowProps> = ({
   icon,
   title,
   subtitle,
-  type = 'link',
+  type = "link",
   value,
   onToggle,
   onPress,
   isDestructive,
-  theme
+  theme,
 }) => {
   const styles = getSettingsScreenStyles(theme);
+
   return (
     <TouchableOpacity
       style={styles.settingRow}
       onPress={onPress}
-      disabled={type === 'toggle'}
+      disabled={type === "toggle"}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconBox, isDestructive && styles.destructiveIconBox]}>
+      <View
+        style={[styles.iconBox, isDestructive && styles.destructiveIconBox]}
+      >
         {icon}
       </View>
       <View style={styles.settingTextContainer}>
-        <Text style={[styles.settingTitle, isDestructive && styles.destructiveText]}>{title}</Text>
+        <Text
+          style={[styles.settingTitle, isDestructive && styles.destructiveText]}
+        >
+          {title}
+        </Text>
         {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
       </View>
-      {type === 'link' ? (
+      {type === "link" ? (
         <ChevronRight color="#94A3B8" size={20} />
       ) : (
         <Switch
           value={value}
           onValueChange={onToggle}
-          trackColor={{ false: '#E2E8F0', true: '#E11D48' }}
+          trackColor={{ false: "#E2E8F0", true: "#E11D48" }}
           thumbColor="#FFFFFF"
         />
       )}
@@ -78,23 +86,33 @@ const SettingRow: React.FC<SettingRowProps> = ({
 
 // --- Main Screen ---
 const SettingsScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getSettingsScreenStyles(colorScheme);
   const navigation = useNavigation();
 
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const { logout } = useAuth();
 
+  const handleLogout = () => {
+    logout();
+  };
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Fixed Navigation Header */}
       <View style={styles.navHeader}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Layout color={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'} size={24} />
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
         </TouchableOpacity>
         <View style={styles.navTitleContainer}>
           <Text style={styles.navTitle}>Settings</Text>
@@ -102,8 +120,10 @@ const SettingsScreen: React.FC = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account & Security</Text>
@@ -112,7 +132,7 @@ const SettingsScreen: React.FC = () => {
               theme={colorScheme}
               icon={<Key color="#64748B" size={20} />}
               title="Change Password"
-              onPress={() => { }}
+              onPress={() => {}}
             />
             <View style={styles.divider} />
             <SettingRow
@@ -120,7 +140,7 @@ const SettingsScreen: React.FC = () => {
               icon={<Shield color="#64748B" size={20} />}
               title="Two-Factor Authentication"
               subtitle="Enhance your account security"
-              onPress={() => { }}
+              onPress={() => {}}
             />
           </View>
         </View>
@@ -167,14 +187,14 @@ const SettingsScreen: React.FC = () => {
               theme={colorScheme}
               icon={<CircleHelp color="#64748B" size={20} />}
               title="Help Center & FAQ"
-              onPress={() => { }}
+              onPress={() => {}}
             />
             <View style={styles.divider} />
             <SettingRow
               theme={colorScheme}
               icon={<Shield color="#64748B" size={20} />}
               title="Privacy Policy"
-              onPress={() => { }}
+              onPress={() => {}}
             />
           </View>
         </View>
@@ -186,12 +206,11 @@ const SettingsScreen: React.FC = () => {
             icon={<LogOut color="#E11D48" size={20} />}
             title="Log Out"
             isDestructive={true}
-            onPress={() => console.log('Logging out...')}
+            onPress={handleLogout}
           />
         </View>
 
         <Text style={styles.versionText}>MaternalCare App v1.0.0</Text>
-
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,27 +6,38 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Heart, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
-import { getLoginScreenStyles } from '@/styles/login.styles';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Heart, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { getLoginScreenStyles } from "@/styles/login.styles";
+import { useAuth } from "@/context/authContext";
 
 const LoginScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getLoginScreenStyles(colorScheme);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    try {
+      await login({ email, password });
+      // On successful login, the user will be redirected by the RootLayout logic
+    } catch (error) {
+      console.error("Login failed:", error);
+      // Optionally show an error message to the user
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-
         {/* Top Section: Logo & Welcome Text */}
         <View style={styles.headerContainer}>
           <View style={styles.logoBox}>
@@ -34,12 +45,13 @@ const LoginScreen: React.FC = () => {
           </View>
           <Text style={styles.brandName}>MaternalCare</Text>
           <Text style={styles.welcomeText}>Welcome Back</Text>
-          <Text style={styles.subtitleText}>Please enter your details to sign in.</Text>
+          <Text style={styles.subtitleText}>
+            Please enter your details to sign in.
+          </Text>
         </View>
 
         {/* Form Section */}
         <View style={styles.formContainer}>
-
           {/* Email Input */}
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Email Address</Text>
@@ -70,7 +82,10 @@ const LoginScreen: React.FC = () => {
                 value={password}
                 onChangeText={setPassword}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
                 {showPassword ? (
                   <EyeOff color="#94A3B8" size={20} />
                 ) : (
@@ -81,25 +96,26 @@ const LoginScreen: React.FC = () => {
           </View>
 
           {/* Forgot Password Link */}
-          <TouchableOpacity style={styles.forgotPasswordButton} onPress={() => router.push('/(auth)/forgotPassword')}>
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => router.push("/(auth)/forgotPassword")}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
-          <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/(drawer)/dashboard')}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>Sign In</Text>
           </TouchableOpacity>
-
         </View>
 
         {/* Bottom Section: Sign Up Link */}
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
             <Text style={styles.signUpText}>Register here</Text>
           </TouchableOpacity>
         </View>
-
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
