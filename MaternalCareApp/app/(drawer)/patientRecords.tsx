@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   ListRenderItem,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Layout, Search, Filter } from 'lucide-react-native';
-import { getPatientRecordsScreenStyles } from '@/styles/patientRecords.styles';
-import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Layout, Search, Filter } from "lucide-react-native";
+import { getPatientRecordsScreenStyles } from "@/styles/patientRecords.styles";
+import { router, useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
 
 // --- Types ---
 interface PatientRecord {
@@ -25,20 +25,20 @@ interface PatientRecord {
 
 // --- Mock Data ---
 const patientsData: PatientRecord[] = [
-  { id: '1', name: 'Sarah\nJohnson', age: 28, bp: '115/75', bloodSugar: 92 },
-  { id: '2', name: 'Maria\nGarcia', age: 38, bp: '145/95', bloodSugar: 110 },
-  { id: '3', name: 'Emily\nChen', age: 25, bp: '122/82', bloodSugar: 88 },
-  { id: '4', name: 'Aisha\nPatel', age: 32, bp: '135/88', bloodSugar: 105 },
-  { id: '5', name: 'Jessica\nWilliams', age: 22, bp: '110/70', bloodSugar: 85 },
-  { id: '6', name: 'Linda\nMartinez', age: 37, bp: '148/92', bloodSugar: 128 },
-  { id: '7', name: 'Priya\nKumar', age: 29, bp: '118/76', bloodSugar: 90 },
-  { id: '8', name: 'Amanda\nBrown', age: 34, bp: '132/86', bloodSugar: 102 },
+  { id: "1", name: "Sarah\nJohnson", age: 28, bp: "115/75", bloodSugar: 92 },
+  { id: "2", name: "Maria\nGarcia", age: 38, bp: "145/95", bloodSugar: 110 },
+  { id: "3", name: "Emily\nChen", age: 25, bp: "122/82", bloodSugar: 88 },
+  { id: "4", name: "Aisha\nPatel", age: 32, bp: "135/88", bloodSugar: 105 },
+  { id: "5", name: "Jessica\nWilliams", age: 22, bp: "110/70", bloodSugar: 85 },
+  { id: "6", name: "Linda\nMartinez", age: 37, bp: "148/92", bloodSugar: 128 },
+  { id: "7", name: "Priya\nKumar", age: 29, bp: "118/76", bloodSugar: 90 },
+  { id: "8", name: "Amanda\nBrown", age: 34, bp: "132/86", bloodSugar: 102 },
 ];
 
 const PatientRecordsScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getPatientRecordsScreenStyles(colorScheme);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation();
 
   // --- Render Items ---
@@ -83,32 +83,45 @@ const PatientRecordsScreen: React.FC = () => {
 
       {/* Table Header */}
       <View style={styles.tableHeader}>
-        <Text style={[styles.tableHeaderText, styles.colName]}>Patient{'\n'}Name</Text>
+        <Text style={[styles.tableHeaderText, styles.colName]}>
+          Patient{"\n"}Name
+        </Text>
         <Text style={[styles.tableHeaderText, styles.colAge]}>Age</Text>
-        <Text style={[styles.tableHeaderText, styles.colBP]}>Blood{'\n'}Pressure</Text>
-        <Text style={[styles.tableHeaderText, styles.colSugar]}>Blood{'\n'}Sugar</Text>
+        <Text style={[styles.tableHeaderText, styles.colBP]}>
+          Blood{"\n"}Pressure
+        </Text>
+        <Text style={[styles.tableHeaderText, styles.colSugar]}>
+          Blood{"\n"}Sugar
+        </Text>
       </View>
     </>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Header Section - Fixed at top */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.headerIcon}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Layout color={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'} size={24} />
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.headerTitle}>Patient Records</Text>
-          <Text style={styles.headerSubtitle}>View and manage all patient assessments</Text>
+          <Text style={styles.headerSubtitle}>
+            View and manage all patient assessments
+          </Text>
         </View>
       </View>
 
       <View style={styles.container}>
-
         <FlatList
           data={patientsData}
           keyExtractor={(item) => item.id}
@@ -121,13 +134,19 @@ const PatientRecordsScreen: React.FC = () => {
         {/* Fixed Bottom Bar */}
         <View style={styles.bottomBar}>
           <Text style={styles.bottomBarText}>
-            Showing <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text> of <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text> patients
+            Showing{" "}
+            <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text>{" "}
+            of{" "}
+            <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text>{" "}
+            patients
           </Text>
-          <TouchableOpacity style={styles.newAssessmentButton}>
+          <TouchableOpacity
+            onPress={() => router.push("/assessment")}
+            style={styles.newAssessmentButton}
+          >
             <Text style={styles.newAssessmentButtonText}>New Assessment</Text>
           </TouchableOpacity>
         </View>
-
       </View>
     </SafeAreaView>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Layout,
   User,
@@ -17,11 +17,13 @@ import {
   Activity,
   Heart,
   Droplet,
-  Thermometer
-} from 'lucide-react-native';
-import { getNewAssessmentScreenStyles } from '@/styles/assessment.styles';
-import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+  Thermometer,
+} from "lucide-react-native";
+import { getNewAssessmentScreenStyles } from "@/styles/assessment.styles";
+import { useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
+import api from "@/api/api";
+import { useRouter } from "expo-router";
 
 // --- Types ---
 interface InputFieldProps {
@@ -31,7 +33,7 @@ interface InputFieldProps {
   helperText?: string;
   value: string;
   onChangeText: (text: string) => void;
-  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
   isRequired?: boolean;
 }
 
@@ -43,11 +45,12 @@ const InputField: React.FC<InputFieldProps> = ({
   helperText,
   value,
   onChangeText,
-  keyboardType = 'default',
-  isRequired = true
+  keyboardType = "default",
+  isRequired = true,
 }) => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getNewAssessmentScreenStyles(colorScheme);
+
   return (
     <View style={styles.inputContainer}>
       <View style={styles.labelRow}>
@@ -71,42 +74,75 @@ const InputField: React.FC<InputFieldProps> = ({
 
 // --- Main Screen Component ---
 const NewAssessmentScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getNewAssessmentScreenStyles(colorScheme);
   const navigation = useNavigation();
+  const router = useRouter();
   // Form State
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [systolic, setSystolic] = useState('');
-  const [diastolic, setDiastolic] = useState('');
-  const [bloodSugar, setBloodSugar] = useState('');
-  const [temperature, setTemperature] = useState('');
-  const [heartRate, setHeartRate] = useState('');
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [systolic, setSystolic] = useState("");
+  const [diastolic, setDiastolic] = useState("");
+  const [bloodSugar, setBloodSugar] = useState("");
+  const [temperature, setTemperature] = useState("");
+  const [heartRate, setHeartRate] = useState("");
+
+  const handleSubmit = async () => {
+    try {
+      const response = await api.post("/model/explain", {
+        physiological_data: [
+          age,
+          systolic,
+          diastolic,
+          bloodSugar,
+          temperature,
+          heartRate,
+        ],
+      });
+      router.push({
+        pathname: "/assessedRisk",
+        params: { result: JSON.stringify(response.data) },
+      });
+      console.log("Prediction Response:", response);
+    } catch (error) {
+      console.error("API Error:", error);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Header Section - Fixed at top */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.headerIcon}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Layout color={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'} size={24} />
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
         </TouchableOpacity>
         <View style={[styles.headerTextContainer, { marginLeft: 12 }]}>
           <Text style={styles.headerTitle}>Physiological Input Module</Text>
-          <Text style={styles.headerSubtitle}>Enter patient vitals for risk assessment</Text>
+          <Text style={styles.headerSubtitle}>
+            Enter patient vitals for risk assessment
+          </Text>
         </View>
       </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Form Card */}
           <View style={styles.card}>
-
             {/* --- Patient Information Section --- */}
             <View style={styles.sectionHeader}>
               <User color="#E11D48" size={20} style={styles.sectionIcon} />
@@ -186,19 +222,25 @@ const NewAssessmentScreen: React.FC = () => {
               onChangeText={setHeartRate}
               keyboardType="numeric"
             />
-
           </View>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Calculate Risk Assessment</Text>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>
+                Calculate Risk Assessment
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/patientRecords")}
+              style={styles.secondaryButton}
+            >
               <Text style={styles.secondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

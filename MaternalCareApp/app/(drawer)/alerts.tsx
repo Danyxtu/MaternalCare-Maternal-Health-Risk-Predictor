@@ -1,23 +1,23 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Layout,
   Bell,
   AlertTriangle,
   Activity,
   TrendingUp,
-  Clock
-} from 'lucide-react-native';
-import { getAlertsScreenStyles } from '@/styles/alerts.styles';
-import { router, useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+  Clock,
+} from "lucide-react-native";
+import { getAlertsScreenStyles } from "@/styles/alerts.styles";
+import { router, useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
 
 // --- Types ---
 interface SummaryCardProps {
@@ -29,7 +29,7 @@ interface SummaryCardProps {
   borderColor?: string;
 }
 
-type AlertVariant = 'high' | 'medium';
+type AlertVariant = "high" | "medium";
 
 interface AlertCardProps {
   patientName: string;
@@ -45,21 +45,21 @@ interface AlertCardProps {
 // --- Theme Configurations for Alert Cards ---
 const alertThemes = {
   high: {
-    bg: '#FFF1F2',
-    borderLeft: '#E11D48',
-    textMain: '#881337',
-    textLabel: '#E11D48',
-    badgeBg: '#FECDD3',
-    buttonBg: '#E11D48',
+    bg: "#FFF1F2",
+    borderLeft: "#E11D48",
+    textMain: "#881337",
+    textLabel: "#E11D48",
+    badgeBg: "#FECDD3",
+    buttonBg: "#E11D48",
   },
   medium: {
-    bg: '#FFFBEB',
-    borderLeft: '#F59E0B',
-    textMain: '#78350F',
-    textLabel: '#D97706',
-    badgeBg: '#FDE68A',
-    buttonBg: '#D97706',
-  }
+    bg: "#FFFBEB",
+    borderLeft: "#F59E0B",
+    textMain: "#78350F",
+    textLabel: "#D97706",
+    badgeBg: "#FDE68A",
+    buttonBg: "#D97706",
+  },
 };
 
 // --- Components ---
@@ -69,10 +69,10 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   value,
   icon,
   iconBgColor,
-  valueColor = '#0F172A',
-  borderColor = '#F1F5F9'
+  valueColor = "#0F172A",
+  borderColor = "#F1F5F9",
 }) => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertsScreenStyles(colorScheme);
   return (
     <View style={[styles.summaryCard, { borderColor }]}>
@@ -82,10 +82,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
           {icon}
         </View>
       </View>
-      <Text style={[styles.summaryCardValue, { color: valueColor }]}>{value}</Text>
+      <Text style={[styles.summaryCardValue, { color: valueColor }]}>
+        {value}
+      </Text>
     </View>
   );
-}
+};
 
 const AlertCard: React.FC<AlertCardProps> = ({
   patientName,
@@ -95,24 +97,38 @@ const AlertCard: React.FC<AlertCardProps> = ({
   bloodSugar,
   heartRate,
   timeAgo,
-  variant
+  variant,
 }) => {
   const theme = alertThemes[variant];
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertsScreenStyles(colorScheme);
 
   return (
-    <View style={[styles.alertCard, { backgroundColor: theme.bg, borderLeftColor: theme.borderLeft }]}>
-
+    <View
+      style={[
+        styles.alertCard,
+        { backgroundColor: theme.bg, borderLeftColor: theme.borderLeft },
+      ]}
+    >
       {/* Header: Name, Badge, Button */}
       <View style={styles.alertCardHeader}>
         <View style={styles.alertCardTitleRow}>
-          <Text style={[styles.alertCardName, { color: theme.textMain }]}>{patientName}</Text>
+          <Text style={[styles.alertCardName, { color: theme.textMain }]}>
+            {patientName}
+          </Text>
           <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
-            <Text style={[styles.badgeText, { color: theme.textMain }]}>{statusText}</Text>
+            <Text style={[styles.badgeText, { color: theme.textMain }]}>
+              {statusText}
+            </Text>
           </View>
         </View>
-        <TouchableOpacity style={[styles.viewDetailsButton, { backgroundColor: theme.buttonBg }]} onPress={() => router.push('/(drawer)/alertDetails')}>
+        <TouchableOpacity
+          style={[
+            styles.viewDetailsButton,
+            { backgroundColor: theme.buttonBg },
+          ]}
+          onPress={() => router.push("/(drawer)/alertDetails")}
+        >
           <Text style={styles.viewDetailsText}>View Details</Text>
         </TouchableOpacity>
       </View>
@@ -120,27 +136,45 @@ const AlertCard: React.FC<AlertCardProps> = ({
       {/* Vitals Grid */}
       <View style={styles.vitalsGrid}>
         <View style={styles.vitalItem}>
-          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>Age</Text>
-          <Text style={[styles.vitalValue, { color: theme.textMain }]}>{age} years</Text>
+          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>
+            Age
+          </Text>
+          <Text style={[styles.vitalValue, { color: theme.textMain }]}>
+            {age} years
+          </Text>
         </View>
         <View style={styles.vitalItem}>
-          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>Blood Pressure</Text>
-          <Text style={[styles.vitalValue, { color: theme.textMain }]}>{bp}</Text>
+          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>
+            Blood Pressure
+          </Text>
+          <Text style={[styles.vitalValue, { color: theme.textMain }]}>
+            {bp}
+          </Text>
         </View>
         <View style={styles.vitalItem}>
-          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>Blood Sugar</Text>
-          <Text style={[styles.vitalValue, { color: theme.textMain }]}>{bloodSugar} mg/dL</Text>
+          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>
+            Blood Sugar
+          </Text>
+          <Text style={[styles.vitalValue, { color: theme.textMain }]}>
+            {bloodSugar} mg/dL
+          </Text>
         </View>
         <View style={styles.vitalItem}>
-          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>Heart Rate</Text>
-          <Text style={[styles.vitalValue, { color: theme.textMain }]}>{heartRate} bpm</Text>
+          <Text style={[styles.vitalLabel, { color: theme.textLabel }]}>
+            Heart Rate
+          </Text>
+          <Text style={[styles.vitalValue, { color: theme.textMain }]}>
+            {heartRate} bpm
+          </Text>
         </View>
       </View>
 
       {/* Footer */}
       <View style={styles.alertCardFooter}>
         <Clock color={theme.textLabel} size={14} style={{ marginRight: 6 }} />
-        <Text style={[styles.footerText, { color: theme.textLabel }]}>Assessed {timeAgo}</Text>
+        <Text style={[styles.footerText, { color: theme.textLabel }]}>
+          Assessed {timeAgo}
+        </Text>
       </View>
     </View>
   );
@@ -148,27 +182,38 @@ const AlertCard: React.FC<AlertCardProps> = ({
 
 // --- Main Screen ---
 const AlertSystemScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertsScreenStyles(colorScheme);
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Screen Header - Fixed at top */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.headerIcon}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Layout color={colorScheme === 'dark' ? '#ECEDEE' : '#11181C'} size={24} />
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.headerTitle}>Real-time Alert System</Text>
-          <Text style={styles.headerSubtitle}>Monitor and respond to patient risk alerts</Text>
+          <Text style={styles.headerSubtitle}>
+            Monitor and respond to patient risk alerts
+          </Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Top Summary Cards (Horizontal Scroll) */}
         <ScrollView
           horizontal
@@ -179,6 +224,7 @@ const AlertSystemScreen: React.FC = () => {
           <SummaryCard
             title="Active Alerts"
             value="4"
+            valueColor="#3B82F6"
             icon={<Bell color="#3B82F6" size={20} />}
             iconBgColor="#DBEAFE"
           />
@@ -209,7 +255,11 @@ const AlertSystemScreen: React.FC = () => {
         {/* High Priority Alerts Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <AlertTriangle color="#E11D48" size={20} style={styles.sectionIcon} />
+            <AlertTriangle
+              color="#E11D48"
+              size={20}
+              style={styles.sectionIcon}
+            />
             <Text style={styles.sectionTitle}>High Priority Alerts</Text>
           </View>
 
@@ -263,7 +313,6 @@ const AlertSystemScreen: React.FC = () => {
             variant="medium"
           />
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

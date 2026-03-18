@@ -9,5 +9,4 @@ const dbConfig = {
   name: process.env.DB_NAME || "maternal_care_db",
 };
 
-// This ensures your app always uses the individual variables to build the URL
 export const DATABASE_URL = `postgresql://${dbConfig.user}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.name}`;
