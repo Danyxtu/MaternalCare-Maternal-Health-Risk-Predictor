@@ -53,7 +53,7 @@ const recentAssessments: AssessmentRecord[] = [
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
-  valueColor = "#0F172A",
+  valueColor = "#89a3e4ff",
   subtitle,
   icon,
   iconBgColor,
@@ -135,7 +135,8 @@ const DashboardScreen: React.FC = () => {
           <StatCard
             title="Total Patients"
             value="8"
-            icon={<Users color="#3B82F6" size={20} />}
+            valueColor="#255db8ff"
+            icon={<Users color="#255db8ff" size={20} />}
             iconBgColor="#DBEAFE"
           />
           <StatCard

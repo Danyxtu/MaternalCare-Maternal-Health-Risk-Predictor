@@ -37,11 +37,10 @@ app.get("/test", (req: any, res: any) => {
 
 app.post("/predict", async (req: any, res: any) => {
   try {
-    const data =
-      req.body.pheinz_physiological_data || req.query.pheinz_physiological_data;
+    const data = req.body.physiological_data || req.query.physiological_data;
 
     if (!data) {
-      return res.status(400).json({ error: "No Datqa provided" });
+      return res.status(400).json({ error: "No Data provided" });
     }
     const formattedData = Array.isArray(data)
       ? data

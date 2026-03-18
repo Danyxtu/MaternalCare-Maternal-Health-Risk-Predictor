@@ -11,7 +11,8 @@ interface AuthContextType {
 }
 
 const PORT = 3000;
-const hosturl = "http://172.19.232.104:" + PORT;
+const HOST_URL = process.env.EXPO_PUBLIC_BASE_URL || "http://10.32.88.104";
+const hosturl = HOST_URL + ":" + PORT;
 const baseURL = hosturl + "/api";
 
 axios.defaults.baseURL = baseURL;
@@ -42,7 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (credentials: object) => {
     try {
-      const response = await axios.post(baseURL + "/auth/login", credentials);
+      const response = await axios.post<{ token: string }>(
+        baseURL + "/auth/login",
+        credentials,
+      );
       const { token } = response.data;
 
       await SecureStore.setItemAsync("userToken", token);
