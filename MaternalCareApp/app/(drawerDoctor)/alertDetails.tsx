@@ -1,13 +1,13 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
+import React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
   TouchableOpacity,
   useColorScheme,
-  Dimensions
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
   Calendar,
@@ -16,17 +16,17 @@ import {
   CheckCircle2,
   User,
   Heart,
-  Droplet
-} from 'lucide-react-native';
-import { getAlertDetailsScreenStyles } from '@/styles/alertDetails.styles';
-import { router } from 'expo-router';
+  Droplet,
+} from "lucide-react-native";
+import { getAlertDetailsScreenStyles } from "@/styles/alertDetails.styles";
+import { router } from "expo-router";
 import { CartesianChart, Bar } from "victory-native";
-import { Svg, Polygon, Line, Circle, Text as SvgText } from 'react-native-svg';
+import { Svg, Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
 
 const screenWidth = Dimensions.get("window").width;
 
 // --- Types ---
-type RiskSeverity = 'HIGH' | 'MEDIUM' | 'LOW';
+type RiskSeverity = "HIGH" | "MEDIUM" | "LOW";
 
 interface VitalCardProps {
   icon: React.ReactNode;
@@ -45,29 +45,29 @@ interface PredictionProp {
 // --- Theme Configuration ---
 const severityThemes = {
   HIGH: {
-    bg: '#FFF1F2',
-    borderLeft: '#E11D48',
-    textMain: '#E11D48',
-    textDark: '#9F1239',
-    badgeBg: '#FECDD3',
-    icon: <AlertTriangle color="#E11D48" size={20} />
+    bg: "#FFF1F2",
+    borderLeft: "#E11D48",
+    textMain: "#E11D48",
+    textDark: "#9F1239",
+    badgeBg: "#FECDD3",
+    icon: <AlertTriangle color="#E11D48" size={20} />,
   },
   MEDIUM: {
-    bg: '#FFFBEB',
-    borderLeft: '#F59E0B',
-    textMain: '#D97706',
-    textDark: '#92400E',
-    badgeBg: '#FDE68A',
-    icon: <AlertCircle color="#D97706" size={20} />
+    bg: "#FFFBEB",
+    borderLeft: "#F59E0B",
+    textMain: "#D97706",
+    textDark: "#92400E",
+    badgeBg: "#FDE68A",
+    icon: <AlertCircle color="#D97706" size={20} />,
   },
   LOW: {
-    bg: '#ECFDF5',
-    borderLeft: '#10B981',
-    textMain: '#10B981',
-    textDark: '#065F46',
-    badgeBg: '#D1FAE5',
-    icon: <CheckCircle2 color="#10B981" size={20} />
-  }
+    bg: "#ECFDF5",
+    borderLeft: "#10B981",
+    textMain: "#10B981",
+    textDark: "#065F46",
+    badgeBg: "#D1FAE5",
+    icon: <CheckCircle2 color="#10B981" size={20} />,
+  },
 };
 
 // --- Mock Data (Maria Garcia - High Risk) ---
@@ -77,23 +77,49 @@ const patientData = {
   time: "04:15 PM",
   overallRisk: "HIGH" as RiskSeverity,
   predictions: [
-    { factor: "Age", severity: "HIGH", description: "Advanced maternal age (>35) associated with higher risks" },
-    { factor: "Blood Pressure", severity: "HIGH", description: "Hypertension detected - risk of preeclampsia" },
-    { factor: "Blood Sugar", severity: "MEDIUM", description: "Elevated blood sugar - monitor for gestational diabetes" },
-    { factor: "Body Temperature", severity: "LOW", description: "Body temperature normal" },
-    { factor: "Heart Rate", severity: "MEDIUM", description: "Slightly elevated heart rate" },
+    {
+      factor: "Age",
+      severity: "HIGH",
+      description: "Advanced maternal age (>35) associated with higher risks",
+    },
+    {
+      factor: "Blood Pressure",
+      severity: "HIGH",
+      description: "Hypertension detected - risk of preeclampsia",
+    },
+    {
+      factor: "Blood Sugar",
+      severity: "MEDIUM",
+      description: "Elevated blood sugar - monitor for gestational diabetes",
+    },
+    {
+      factor: "Body Temperature",
+      severity: "LOW",
+      description: "Body temperature normal",
+    },
+    {
+      factor: "Heart Rate",
+      severity: "MEDIUM",
+      description: "Slightly elevated heart rate",
+    },
   ] as PredictionProp[],
   recommendations: [
     "Immediate consultation with obstetrician recommended",
     "Daily vital signs monitoring required",
-    "Consider hospitalization for close observation"
-  ]
+    "Consider hospitalization for close observation",
+  ],
 };
 
 // --- Sub-Components ---
 
-const VitalCard: React.FC<VitalCardProps> = ({ icon, iconBgColor, label, value, unit }) => {
-  const colorScheme = useColorScheme() ?? 'light';
+const VitalCard: React.FC<VitalCardProps> = ({
+  icon,
+  iconBgColor,
+  label,
+  value,
+  unit,
+}) => {
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertDetailsScreenStyles(colorScheme);
   return (
     <View style={styles.vitalCard}>
@@ -109,29 +135,55 @@ const VitalCard: React.FC<VitalCardProps> = ({ icon, iconBgColor, label, value, 
   );
 };
 
-const PredictionCard: React.FC<PredictionProp> = ({ factor, severity, description }) => {
+const PredictionCard: React.FC<PredictionProp> = ({
+  factor,
+  severity,
+  description,
+}) => {
   const theme = severityThemes[severity];
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertDetailsScreenStyles(colorScheme);
+  const textColor = theme.textDark;
 
   return (
-    <View style={[styles.predictionCard, { backgroundColor: theme.bg, borderLeftColor: theme.borderLeft }]}>
+    <View
+      style={[
+        styles.predictionCard,
+        { backgroundColor: theme.bg, borderLeftColor: theme.borderLeft },
+      ]}
+    >
       <View style={styles.predictionHeader}>
         <View style={styles.predictionTitleRow}>
-          <Text style={styles.predictionFactor}>{factor}</Text>
+          <Text style={[styles.predictionFactor, { color: textColor }]}>
+            {factor}
+          </Text>
           <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
-            <Text style={[styles.badgeText, { color: theme.textDark }]}>{severity}</Text>
+            <Text style={[styles.badgeText, { color: theme.textDark }]}>
+              {severity}
+            </Text>
           </View>
         </View>
         {theme.icon}
       </View>
-      <Text style={styles.predictionDescription}>{description}</Text>
+      <Text style={[styles.predictionDescription, { color: textColor }]}>
+        {description}
+      </Text>
     </View>
   );
 };
 
 // --- Custom Radar Chart using SVG ---
-const RadarChart = ({ data, labels, size, isDark }: { data: number[], labels: string[], size: number, isDark: boolean }) => {
+const RadarChart = ({
+  data,
+  labels,
+  size,
+  isDark,
+}: {
+  data: number[];
+  labels: string[];
+  size: number;
+  isDark: boolean;
+}) => {
   const radius = size / 2.5;
   const centerX = size / 2;
   const centerY = size / 2;
@@ -139,27 +191,48 @@ const RadarChart = ({ data, labels, size, isDark }: { data: number[], labels: st
 
   // Grid levels
   const levels = [1, 2, 3];
-  const gridLines = levels.map(level => {
-    const points = labels.map((_, i) => {
-      const x = centerX + (radius * (level / 3)) * Math.cos(i * angleStep - Math.PI / 2);
-      const y = centerY + (radius * (level / 3)) * Math.sin(i * angleStep - Math.PI / 2);
-      return `${x},${y}`;
-    }).join(' ');
-    return <Polygon key={level} points={points} fill="none" stroke={isDark ? "#334155" : "#E2E8F0"} strokeWidth="1" />;
+  const gridLines = levels.map((level) => {
+    const points = labels
+      .map((_, i) => {
+        const x =
+          centerX +
+          radius * (level / 3) * Math.cos(i * angleStep - Math.PI / 2);
+        const y =
+          centerY +
+          radius * (level / 3) * Math.sin(i * angleStep - Math.PI / 2);
+        return `${x},${y}`;
+      })
+      .join(" ");
+    return (
+      <Polygon
+        key={level}
+        points={points}
+        fill="none"
+        stroke={isDark ? "#334155" : "#E2E8F0"}
+        strokeWidth="1"
+      />
+    );
   });
 
   // Axis lines and labels
   const axes = labels.map((label, i) => {
     const x = centerX + radius * Math.cos(i * angleStep - Math.PI / 2);
     const y = centerY + radius * Math.sin(i * angleStep - Math.PI / 2);
-    
+
     // Label positioning
     const lx = centerX + (radius + 25) * Math.cos(i * angleStep - Math.PI / 2);
     const ly = centerY + (radius + 15) * Math.sin(i * angleStep - Math.PI / 2);
 
     return (
       <React.Fragment key={i}>
-        <Line x1={centerX} y1={centerY} x2={x} y2={y} stroke={isDark ? "#334155" : "#E2E8F0"} strokeWidth="1" />
+        <Line
+          x1={centerX}
+          y1={centerY}
+          x2={x}
+          y2={y}
+          stroke={isDark ? "#334155" : "#E2E8F0"}
+          strokeWidth="1"
+        />
         <SvgText
           x={lx}
           y={ly}
@@ -176,11 +249,15 @@ const RadarChart = ({ data, labels, size, isDark }: { data: number[], labels: st
   });
 
   // Data area
-  const dataPoints = data.map((val, i) => {
-    const x = centerX + (radius * (val / 3)) * Math.cos(i * angleStep - Math.PI / 2);
-    const y = centerY + (radius * (val / 3)) * Math.sin(i * angleStep - Math.PI / 2);
-    return `${x},${y}`;
-  }).join(' ');
+  const dataPoints = data
+    .map((val, i) => {
+      const x =
+        centerX + radius * (val / 3) * Math.cos(i * angleStep - Math.PI / 2);
+      const y =
+        centerY + radius * (val / 3) * Math.sin(i * angleStep - Math.PI / 2);
+      return `${x},${y}`;
+    })
+    .join(" ");
 
   return (
     <Svg width={size} height={size}>
@@ -198,11 +275,11 @@ const RadarChart = ({ data, labels, size, isDark }: { data: number[], labels: st
 
 // --- Main Screen ---
 const AlertDetailsScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertDetailsScreenStyles(colorScheme);
-  const isHighRisk = patientData.overallRisk === 'HIGH';
+  const isHighRisk = patientData.overallRisk === "HIGH";
   const headerTheme = severityThemes[patientData.overallRisk];
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   const radarData = [3, 3, 2, 1, 2]; // Age, BP, Sugar, Temp, HR
   const radarLabels = ["Age", "BP", "Sugar", "Temp", "HR"];
@@ -212,22 +289,29 @@ const AlertDetailsScreen: React.FC = () => {
     { factor: "BP", risk: 3 },
     { factor: "Sugar", risk: 2 },
     { factor: "Temp", risk: 1 },
-    { factor: "HR", risk: 2 }
+    { factor: "HR", risk: 2 },
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       {/* Top Navigation */}
       <View style={styles.navHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft color="#E11D48" size={20} />
           <Text style={styles.backButtonText}>Back to Alerts</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Patient Header Section */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -235,14 +319,16 @@ const AlertDetailsScreen: React.FC = () => {
             <View style={styles.dateContainer}>
               <Calendar color="#64748B" size={14} style={{ marginRight: 6 }} />
               <Text style={styles.dateText}>
-                {patientData.date}{' '}at {patientData.time}
+                {patientData.date} at {patientData.time}
               </Text>
             </View>
           </View>
 
           <View style={[styles.mainBadge, { backgroundColor: headerTheme.bg }]}>
             {headerTheme.icon}
-            <Text style={[styles.mainBadgeText, { color: headerTheme.textDark }]}>
+            <Text
+              style={[styles.mainBadgeText, { color: headerTheme.textDark }]}
+            >
               {patientData.overallRisk} RISK
             </Text>
           </View>
@@ -252,40 +338,62 @@ const AlertDetailsScreen: React.FC = () => {
         {isHighRisk && (
           <View style={styles.warningBanner}>
             <View style={styles.warningBannerHeader}>
-              <AlertTriangle color="#E11D48" size={20} style={{ marginRight: 8 }} />
-              <Text style={styles.warningBannerTitle}>Immediate Attention Required</Text>
+              <AlertTriangle
+                color="#E11D48"
+                size={20}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.warningBannerTitle}>
+                Immediate Attention Required
+              </Text>
             </View>
             <Text style={styles.warningBannerText}>
-              This patient has been classified as high risk. Please review the risk factors below and consult with a healthcare provider immediately.
+              This patient has been classified as high risk. Please review the
+              risk factors below and consult with a healthcare provider
+              immediately.
             </Text>
           </View>
         )}
 
         {/* Vitals Horizontal Scroll */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vitalsScroll} contentContainerStyle={styles.vitalsScrollContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.vitalsScroll}
+          contentContainerStyle={styles.vitalsScrollContent}
+        >
           <VitalCard
-            icon={<User color="#8B5CF6" size={18} />} iconBgColor="#EDE9FE"
-            label="Age" value="38" unit="years"
+            icon={<User color="#8B5CF6" size={18} />}
+            iconBgColor="#EDE9FE"
+            label="Age"
+            value="38"
+            unit="years"
           />
           <VitalCard
-            icon={<Heart color="#E11D48" size={18} />} iconBgColor="#FFE4E6"
-            label="Blood Pressure" value="145/95" unit="mmHg"
+            icon={<Heart color="#E11D48" size={18} />}
+            iconBgColor="#FFE4E6"
+            label="Blood Pressure"
+            value="145/95"
+            unit="mmHg"
           />
           <VitalCard
-            icon={<Droplet color="#3B82F6" size={18} />} iconBgColor="#DBEAFE"
-            label="Blood Sugar" value="110" unit="mg/dL"
+            icon={<Droplet color="#3B82F6" size={18} />}
+            iconBgColor="#DBEAFE"
+            label="Blood Sugar"
+            value="110"
+            unit="mg/dL"
           />
         </ScrollView>
 
         {/* Risk Factor Analysis (Radar Chart) */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Risk Factor Analysis</Text>
-          <View style={{ alignItems: 'center', marginVertical: 10 }}>
-            <RadarChart 
-              data={radarData} 
-              labels={radarLabels} 
-              size={screenWidth - 80} 
-              isDark={isDark} 
+          <View style={{ alignItems: "center", marginVertical: 10 }}>
+            <RadarChart
+              data={radarData}
+              labels={radarLabels}
+              size={screenWidth - 80}
+              isDark={isDark}
             />
           </View>
         </View>
@@ -323,7 +431,8 @@ const AlertDetailsScreen: React.FC = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Explainable Risk Predictions</Text>
           <Text style={styles.cardSubtitle}>
-            Detailed analysis of each physiological factor contributing to the overall risk assessment.
+            Detailed analysis of each physiological factor contributing to the
+            overall risk assessment.
           </Text>
 
           {patientData.predictions.map((pred, index) => (
@@ -333,7 +442,9 @@ const AlertDetailsScreen: React.FC = () => {
 
         {/* Clinical Recommendations */}
         <View style={styles.recommendationsCard}>
-          <Text style={styles.recommendationsTitle}>Clinical Recommendations</Text>
+          <Text style={styles.recommendationsTitle}>
+            Clinical Recommendations
+          </Text>
           {patientData.recommendations.map((rec, index) => (
             <View key={index} style={styles.bulletRow}>
               <View style={styles.bulletPoint} />
@@ -341,7 +452,6 @@ const AlertDetailsScreen: React.FC = () => {
             </View>
           ))}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

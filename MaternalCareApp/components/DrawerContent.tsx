@@ -147,7 +147,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Dashboard"}
-              onPress={() => router.push("/(drawer)/dashboard")}
+              onPress={() => router.push("/(drawerDoctor)/dashboard")}
             />
             <DrawerItem
               label="Patient Records"
@@ -160,7 +160,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Patient Records"}
-              onPress={() => router.push("/(drawer)/patientRecords")}
+              onPress={() => router.push("/(drawerDoctor)/patientRecords")}
             />
             <DrawerItem
               label="New Assessment"
@@ -173,7 +173,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "New Assessment"}
-              onPress={() => router.push("/(drawer)/assessment")}
+              onPress={() => router.push("/(drawerDoctor)/assessment")}
             />
             <DrawerItem
               label="Alerts"
@@ -184,7 +184,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Alerts"}
-              onPress={() => router.push("/(drawer)/alerts")}
+              onPress={() => router.push("/(drawerDoctor)/alerts")}
             />
           </View>
 
@@ -200,7 +200,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "My Profile"}
-              onPress={() => router.push("/(drawer)/profile")}
+              onPress={() => router.push("/(drawerDoctor)/profile")}
             />
             <DrawerItem
               label="Settings"
@@ -211,7 +211,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Settings"}
-              onPress={() => router.push("/(drawer)/settings")}
+              onPress={() => router.push("/(drawerDoctor)/settings")}
             />
           </View>
         </ScrollView>

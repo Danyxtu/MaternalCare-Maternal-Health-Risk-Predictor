@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { KeyboardAwareContainer } from "@/components/KeyboardAwareContainer";
 
 /**
  *  if you want to design this page make sure:
@@ -12,11 +13,13 @@ import { Stack } from "expo-router";
  */
 const AuthLayout = () => {
   return (
-    <Stack>
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="register" options={{ headerShown: false }} />
-      <Stack.Screen name="forgotPassword" options={{ headerShown: false }} />
-    </Stack>
+    <KeyboardAwareContainer>
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="forgotPassword" options={{ headerShown: false }} />
+      </Stack>
+    </KeyboardAwareContainer>
   );
 };
 
