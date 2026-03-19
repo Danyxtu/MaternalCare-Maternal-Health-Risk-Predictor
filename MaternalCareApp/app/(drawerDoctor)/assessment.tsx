@@ -86,8 +86,10 @@ const NewAssessmentScreen: React.FC = () => {
   const [bloodSugar, setBloodSugar] = useState("");
   const [temperature, setTemperature] = useState("");
   const [heartRate, setHeartRate] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const response = await api.post("/model/explain", {
         physiological_data: [
@@ -106,6 +108,8 @@ const NewAssessmentScreen: React.FC = () => {
       console.log("Prediction Response:", response);
     } catch (error) {
       console.error("API Error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -227,11 +231,21 @@ const NewAssessmentScreen: React.FC = () => {
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              onPress={handleSubmit}
-              style={styles.primaryButton}
+              onPress={loading ? undefined : handleSubmit}
+              style={[
+                styles.primaryButton,
+                loading && { backgroundColor: "#CBD5E1" }, // Tailwind slate-300
+              ]}
+              disabled={loading}
+              activeOpacity={loading ? 1 : 0.7}
             >
-              <Text style={styles.primaryButtonText}>
-                Calculate Risk Assessment
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  loading && { color: "#64748B" }, // Tailwind slate-500
+                ]}
+              >
+                {loading ? "Calculating..." : "Calculate Risk Assessment"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

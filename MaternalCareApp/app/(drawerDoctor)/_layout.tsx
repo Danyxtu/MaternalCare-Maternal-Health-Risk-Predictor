@@ -1,9 +1,26 @@
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
+import { useRouter } from "expo-router";
 
 import CustomDrawerContent from "@/components/DrawerContent";
+import { useAuth } from "@/context/authContext";
 
 export default function DrawerLayout() {
+  const { role, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (role !== "DOCTOR") {
+      if (role === "PATIENT") {
+        router.replace("/(drawerPatient)/dashboard");
+      } else {
+        router.replace("/welcomePage");
+      }
+    }
+  }, [role, isLoading, router]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
