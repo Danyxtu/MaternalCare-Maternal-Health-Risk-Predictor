@@ -7,6 +7,7 @@ const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   // 1. Get token from header (Format: "Bearer <token>")
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
+  console.log("test");
 
   if (!token) {
     return res.status(401).json({ error: "Access denied. No token provided." });
