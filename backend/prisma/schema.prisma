@@ -21,9 +21,122 @@ model User {
   password  String
   role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
+
+  patient   Patient?
+  doctor    Doctor?
 }
 
 enum Role {
   PATIENT
   DOCTOR
+}
+
+model Patient {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?     @unique
+  first_name     String
+  last_name      String
+  middle_initial String?
+  age       Int
+  contact   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessments Assessment[]
+  alerts      Alert[]
+  notifications Notification[]
+}
+
+model Doctor {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?     @unique
+  first_name     String
+  last_name      String
+  middle_initial String?
+  contact   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessments Assessment[]
+  alerts      Alert[] @relation("AlertAssignee")
+  notifications Notification[]
+}
+
+model Assessment {
+  id                 Int      @id @default(autoincrement())
+  patient            Patient  @relation(fields: [patientId], references: [id])
+  patientId          Int
+  doctor             Doctor?  @relation(fields: [doctorId], references: [id])
+  doctorId           Int?
+  version            Int
+  physiological_data Json
+  model_version      String
+  risk_score         Float
+  risk_label         String
+  raw_probabilities  Json?
+  explanations       Json?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  alerts Alert[]
+
+  @@unique([patientId, version])
+}
+
+model Alert {
+  id             Int            @id @default(autoincrement())
+  assessment     Assessment     @relation(fields: [assessmentId], references: [id])
+  assessmentId   Int
+  patient        Patient        @relation(fields: [patientId], references: [id])
+  patientId      Int
+  assignee       Doctor?        @relation("AlertAssignee", fields: [assigneeId], references: [id])
+  assigneeId     Int?
+  type           AlertType
+  severity       AlertSeverity
+  status         AlertStatus    @default(OPEN)
+  message        String
+  createdAt      DateTime       @default(now())
+  resolvedAt     DateTime?
+
+  notifications Notification[]
+}
+
+model Notification {
+  id        Int        @id @default(autoincrement())
+  alert     Alert?     @relation(fields: [alertId], references: [id])
+  alertId   Int?
+  patient   Patient?   @relation(fields: [patientId], references: [id])
+  patientId Int?
+  doctor    Doctor?    @relation(fields: [doctorId], references: [id])
+  doctorId  Int?
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  body      String
+  is_read   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+}
+
+enum AlertType {
+  MATERNAL_RISK
+  OTHER
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationChannel {
+  IN_APP
 }
