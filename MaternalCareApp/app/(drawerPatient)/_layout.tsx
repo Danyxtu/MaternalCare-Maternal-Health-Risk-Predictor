@@ -1,28 +1,13 @@
-import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
-import { useRouter } from "expo-router";
 
-import { useAuth } from "@/context/authContext";
+import CustomDrawerContent from "@/components/DrawerContent";
 
-const PatientDrawerLayout = () => {
-  const { role, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (role !== "PATIENT") {
-      if (role === "DOCTOR") {
-        router.replace("/(drawerDoctor)/dashboard");
-      } else {
-        router.replace("/welcomePage");
-      }
-    }
-  }, [role, isLoading, router]);
-
+export default function DrawerLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
           headerShown: true,
           drawerType: "slide",
@@ -31,35 +16,53 @@ const PatientDrawerLayout = () => {
             backgroundColor: "#f8f9fa",
             width: "100%",
           },
+          // Customizing the transition speed
+          // @ts-ignore - transitionSpec is supported but sometimes types lag
+          transitionSpec: {
+            open: {
+              animation: 'timing',
+              config: {
+                duration: 3000, // Extremely slow opening
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                duration: 3000, // Extremely slow closing
+              },
+            },
+          },
         }}
       >
         <Drawer.Screen
           name="dashboard"
-          options={{
-            title: "Dashboard",
-            drawerLabel: "Dashboard",
-            headerShown: false,
-          }}
+          options={{ title: "Home", drawerLabel: "Dashboard", headerShown: false }}
         />
         <Drawer.Screen
-          name="profile"
-          options={{
-            title: "Profile",
-            drawerLabel: "My Profile",
-            headerShown: false,
-          }}
+          name="patientRecords"
+          options={{ title: "Patient Records", drawerLabel: "Patient Records", headerShown: false }}
+        />
+        <Drawer.Screen
+          name="assessment"
+          options={{ title: "Assessment", drawerLabel: "New Assessment", headerShown: false }}
+        />
+        <Drawer.Screen
+          name="alerts"
+          options={{ title: "Alerts", drawerLabel: "Alerts", headerShown: false }}
         />
         <Drawer.Screen
           name="settings"
-          options={{
-            title: "Settings",
-            drawerLabel: "Settings",
-            headerShown: false,
-          }}
+          options={{ title: "Settings", drawerLabel: "Settings", headerShown: false }}
+        />
+        <Drawer.Screen
+          name="profile"
+          options={{ title: "Profile", drawerLabel: "My Profile", headerShown: false }}
+        />
+        <Drawer.Screen
+          name="alertDetails"
+          options={{ title: "Alert Details", drawerLabel: () => null, headerShown: false }}
         />
       </Drawer>
     </GestureHandlerRootView>
   );
-};
-
-export default PatientDrawerLayout;
+}
