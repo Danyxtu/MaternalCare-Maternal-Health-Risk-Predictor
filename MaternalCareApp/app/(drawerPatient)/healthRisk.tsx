@@ -8,7 +8,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ShieldAlert, ShieldCheck, Shield, ChevronLeft } from "lucide-react-native";
+import { 
+  ShieldAlert, 
+  ShieldCheck, 
+  Shield, 
+  ChevronLeft 
+} from "lucide-react-native";
 import { getPatientRiskStyles } from "@/styles/patientRisk.styles";
 
 const HealthRiskScreen: React.FC = () => {
@@ -17,31 +22,30 @@ const HealthRiskScreen: React.FC = () => {
   const router = useRouter();
   const { result } = useLocalSearchParams();
 
-  // Parse result if it exists, otherwise use default/last known
-  const data = result ? JSON.parse(result as string) : null;
-  const prediction = data?.prediction || "Low Risk";
+  // Fallback if no result passed
+  const aiResult = result ? JSON.parse(result as string) : null;
+  const prediction = aiResult?.predicted_class || aiResult?.prediction || "Low Risk";
 
   const getRiskDetails = () => {
-    switch (prediction.toLowerCase()) {
-      case "high risk":
-        return {
-          color: "#EF4444",
-          icon: <ShieldAlert color="#FFFFFF" size={32} />,
-          description: "Your recent vitals indicate a high risk level. Please contact your healthcare provider immediately for further guidance.",
-        };
-      case "mid risk":
-      case "medium risk":
-        return {
-          color: "#F59E0B",
-          icon: <Shield color="#FFFFFF" size={32} />,
-          description: "Your vitals show a moderate risk. We recommend scheduling a follow-up consultation with your doctor soon.",
-        };
-      default:
-        return {
-          color: "#10B981",
-          icon: <ShieldCheck color="#FFFFFF" size={32} />,
-          description: "Your vitals are within the normal range. Keep maintaining your healthy lifestyle and regular checkups.",
-        };
+    const level = prediction.toLowerCase();
+    if (level.includes("high")) {
+      return {
+        color: "#EF4444",
+        icon: <ShieldAlert color="#FFFFFF" size={32} />,
+        description: "Your recent vitals indicate a high risk level. Please contact your healthcare provider immediately for further guidance.",
+      };
+    } else if (level.includes("mid") || level.includes("medium")) {
+      return {
+        color: "#F59E0B",
+        icon: <Shield color="#FFFFFF" size={32} />,
+        description: "Your vitals show a moderate risk. We recommend scheduling a follow-up consultation with your doctor soon.",
+      };
+    } else {
+      return {
+        color: "#10B981",
+        icon: <ShieldCheck color="#FFFFFF" size={32} />,
+        description: "Your vitals are within the normal range. Keep maintaining your healthy lifestyle and regular checkups.",
+      };
     }
   };
 

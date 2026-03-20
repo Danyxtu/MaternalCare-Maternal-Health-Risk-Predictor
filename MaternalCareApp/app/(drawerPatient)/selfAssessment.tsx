@@ -104,43 +104,19 @@ const SelfAssessmentScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      // 1. Get Prediction from AI Model
-      const modelRes = await api.post("/model/explain", {
+      const response = await api.post("/model/explain", {
         physiological_data: [
-          parseFloat(age),
-          parseFloat(systolic),
-          parseFloat(diastolic),
-          parseFloat(bloodSugar),
-          parseFloat(temperature),
-          parseFloat(heartRate),
+          age,
+          systolic,
+          diastolic,
+          bloodSugar,
+          temperature,
+          heartRate,
         ],
       });
-
-      const prediction = modelRes.data.predicted_class; // e.g., "low risk"
-
-      // 2. Save Assessment to Database
-      await api.post(
-        "/patient/assessment",
-        {
-          age: parseInt(age),
-          systolicBP: parseInt(systolic),
-          diastolicBP: parseInt(diastolic),
-          bloodSugar: parseFloat(bloodSugar),
-          bodyTemp: parseFloat(temperature),
-          heartRate: parseInt(heartRate),
-          riskLevel: prediction,
-        },
-        {
-          headers: { Authorization: `Bearer ${userToken}` },
-        }
-      );
-
-      showToast("Assessment saved successfully!");
-
-      // 3. Navigate to results screen
       router.push({
         pathname: "/(drawerPatient)/healthRisk" as any,
-        params: { result: JSON.stringify(modelRes.data) },
+        params: { result: JSON.stringify(response.data) },
       });
     } catch (error: any) {
       console.error("Assessment Error:", error);
