@@ -127,7 +127,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
             styles.viewDetailsButton,
             { backgroundColor: theme.buttonBg },
           ]}
-          onPress={() => router.push("/(drawer)/alertDetails")}
+          onPress={() => router.push("/(drawerDoctor)/alertDetails")}
         >
           <Text style={styles.viewDetailsText}>View Details</Text>
         </TouchableOpacity>

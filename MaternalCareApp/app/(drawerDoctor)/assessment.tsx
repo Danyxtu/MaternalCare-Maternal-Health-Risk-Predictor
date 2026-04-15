@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -78,8 +78,26 @@ const NewAssessmentScreen: React.FC = () => {
   const styles = getNewAssessmentScreenStyles(colorScheme);
   const navigation = useNavigation();
   const router = useRouter();
+  const patientOptions: Array<{ key: "existing" | "new"; label: string }> = [
+    { key: "existing", label: "Existing Patient" },
+    { key: "new", label: "New Patient" },
+  ];
+  const existingPatients = [
+    { id: "1", firstName: "Amelia", lastName: "Reyes" },
+    { id: "2", firstName: "Bianca", lastName: "Santos" },
+    { id: "3", firstName: "Clara", lastName: "Domingo" },
+    { id: "4", firstName: "Diana", lastName: "Flores" },
+    { id: "5", firstName: "Elena", lastName: "Garcia" },
+  ];
   // Form State
-  const [name, setName] = useState("");
+  const [patientType, setPatientType] = useState<"existing" | "new">(
+    "existing",
+  );
+  const [existingSearch, setExistingSearch] = useState("");
+  const [selectedPatientName, setSelectedPatientName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [middleInitial, setMiddleInitial] = useState("");
   const [age, setAge] = useState("");
   const [systolic, setSystolic] = useState("");
   const [diastolic, setDiastolic] = useState("");
@@ -88,9 +106,47 @@ const NewAssessmentScreen: React.FC = () => {
   const [heartRate, setHeartRate] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const filteredPatients = useMemo(() => {
+    const query = existingSearch.trim().toLowerCase();
+    if (!query) return existingPatients;
+    return existingPatients.filter((patient) => {
+      const initials =
+        `${patient.firstName[0]}${patient.lastName[0]}`.toLowerCase();
+      const nameMatch = `${patient.firstName} ${patient.lastName}`
+        .toLowerCase()
+        .includes(query);
+      const initialsMatch = initials.startsWith(
+        query.replace(/\s+/g, "").slice(0, 2),
+      );
+      return nameMatch || initialsMatch;
+    });
+  }, [existingSearch, existingPatients]);
+
+  const formatNewPatientName = () => {
+    const mi = middleInitial.trim();
+    const miText = mi ? `${mi.charAt(0).toUpperCase()}. ` : "";
+    return `${firstName.trim()} ${miText}${lastName.trim()}`.trim();
+  };
+
+  const handlePatientTypeChange = (type: "existing" | "new") => {
+    setPatientType(type);
+    if (type === "existing") {
+      setFirstName("");
+      setLastName("");
+      setMiddleInitial("");
+    } else {
+      setExistingSearch("");
+      setSelectedPatientName("");
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const patientName =
+        patientType === "existing"
+          ? selectedPatientName || existingSearch.trim()
+          : formatNewPatientName();
       const response = await api.post("/model/explain", {
         physiological_data: [
           age,
@@ -100,6 +156,8 @@ const NewAssessmentScreen: React.FC = () => {
           temperature,
           heartRate,
         ],
+        patient_name: patientName,
+        patient_type: patientType,
       });
       router.push({
         pathname: "/assessedRisk",
@@ -147,18 +205,109 @@ const NewAssessmentScreen: React.FC = () => {
         >
           {/* Form Card */}
           <View style={styles.card}>
+            <View style={styles.selectorContainer}>
+              {patientOptions.map((option) => {
+                const selected = patientType === option.key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.selectorOption,
+                      selected && styles.selectorOptionActive,
+                    ]}
+                    onPress={() => handlePatientTypeChange(option.key)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        selected && styles.selectorOptionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             {/* --- Patient Information Section --- */}
             <View style={styles.sectionHeader}>
               <User color="#E11D48" size={20} style={styles.sectionIcon} />
               <Text style={styles.sectionTitle}>Patient Information</Text>
             </View>
 
-            <InputField
-              label="Full Name"
-              placeholder="Enter patient name"
-              value={name}
-              onChangeText={setName}
-            />
+            {patientType === "existing" ? (
+              <>
+                <InputField
+                  label="Patient (Initials or Name)"
+                  placeholder="Type initials e.g., AG"
+                  value={existingSearch}
+                  onChangeText={(text) => {
+                    setExistingSearch(text);
+                    setSelectedPatientName(text);
+                  }}
+                />
+                <View style={styles.suggestionContainer}>
+                  {filteredPatients.map((patient) => {
+                    const formattedName = `${patient.firstName} ${patient.lastName}`;
+                    const initials = `${patient.firstName[0]}${patient.lastName[0]}`;
+                    const isActive = selectedPatientName === formattedName;
+                    return (
+                      <TouchableOpacity
+                        key={patient.id}
+                        style={[
+                          styles.suggestionChip,
+                          isActive && styles.suggestionChipActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedPatientName(formattedName);
+                          setExistingSearch(formattedName);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.suggestionChipText,
+                            isActive && styles.suggestionChipTextActive,
+                          ]}
+                        >
+                          {formattedName}
+                          <Text style={styles.suggestionChipInitials}>
+                            {`  (${initials})`}
+                          </Text>
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {filteredPatients.length === 0 && existingSearch.trim() && (
+                    <Text style={styles.helperText}>No matches found</Text>
+                  )}
+                </View>
+              </>
+            ) : (
+              <>
+                <InputField
+                  label="First Name"
+                  placeholder="Enter first name"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                />
+                <InputField
+                  label="Last Name"
+                  placeholder="Enter last name"
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+                <InputField
+                  label="Middle Initial"
+                  placeholder="e.g., A"
+                  value={middleInitial}
+                  onChangeText={(text) => setMiddleInitial(text.slice(0, 1))}
+                  helperText="Single letter only"
+                />
+              </>
+            )}
 
             <InputField
               label="Age (years)"

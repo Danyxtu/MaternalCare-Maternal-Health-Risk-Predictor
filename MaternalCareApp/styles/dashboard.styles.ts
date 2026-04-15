@@ -162,6 +162,11 @@ export const getDashboardScreenStyles = (theme: Theme) => {
       fontSize: 14,
       fontWeight: "700",
     },
+    legendCountText: {
+      fontSize: 12,
+      color: colors.tabIconDefault,
+      marginTop: 2,
+    },
     lineLegendMarker: {
       marginRight: 4,
       fontSize: 12,

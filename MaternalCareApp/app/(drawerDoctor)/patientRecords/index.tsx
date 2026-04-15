@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Layout, Search, Filter } from "lucide-react-native";
-import { getPatientRecordsScreenStyles } from "@/styles/patientRecords.styles";
+import { Layout, Search, Filter, ChevronRight } from "lucide-react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
+
+import { getPatientRecordsScreenStyles } from "@/styles/patientRecords.styles";
 
 // --- Types ---
 interface PatientRecord {
@@ -41,24 +42,47 @@ const PatientRecordsScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation();
 
+  const filteredPatients = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return patientsData;
+    return patientsData.filter((patient) =>
+      patient.name.toLowerCase().replace("\n", " ").includes(query),
+    );
+  }, [searchQuery]);
+
   // --- Render Items ---
   const renderItem: ListRenderItem<PatientRecord> = ({ item }) => (
-    <View style={styles.tableRow}>
-      <View style={[styles.cell, styles.colName]}>
-        <Text style={styles.patientName}>{item.name}</Text>
+    <TouchableOpacity
+      style={styles.tableRowButton}
+      onPress={() =>
+        router.push({
+          pathname: "/(drawerDoctor)/patientRecords/[id]",
+          params: { id: item.id },
+        })
+      }
+      activeOpacity={0.8}
+    >
+      <View style={styles.tableRow}>
+        <View style={[styles.cell, styles.colName]}>
+          <Text style={styles.patientName}>{item.name}</Text>
+        </View>
+        <View style={[styles.cell, styles.colAge]}>
+          <Text style={styles.cellText}>{item.age}</Text>
+        </View>
+        <View style={[styles.cell, styles.colBP]}>
+          <Text style={styles.cellText}>{item.bp}</Text>
+          <Text style={styles.unitText}>mmHg</Text>
+        </View>
+        <View style={[styles.cell, styles.colSugar]}>
+          <Text style={styles.cellText}>{item.bloodSugar}</Text>
+          <Text style={styles.unitText}>mg/dL</Text>
+        </View>
+        <ChevronRight
+          size={18}
+          color={colorScheme === "dark" ? "#CBD5E1" : "#94A3B8"}
+        />
       </View>
-      <View style={[styles.cell, styles.colAge]}>
-        <Text style={styles.cellText}>{item.age}</Text>
-      </View>
-      <View style={[styles.cell, styles.colBP]}>
-        <Text style={styles.cellText}>{item.bp}</Text>
-        <Text style={styles.unitText}>mmHg</Text>
-      </View>
-      <View style={[styles.cell, styles.colSugar]}>
-        <Text style={styles.cellText}>{item.bloodSugar}</Text>
-        <Text style={styles.unitText}>mg/dL</Text>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const ListHeader = () => (
@@ -123,7 +147,7 @@ const PatientRecordsScreen: React.FC = () => {
 
       <View style={styles.container}>
         <FlatList
-          data={patientsData}
+          data={filteredPatients}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           ListHeaderComponent={ListHeader}
@@ -135,7 +159,9 @@ const PatientRecordsScreen: React.FC = () => {
         <View style={styles.bottomBar}>
           <Text style={styles.bottomBarText}>
             Showing{" "}
-            <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text>{" "}
+            <Text style={styles.bottomBarTextBold}>
+              {filteredPatients.length}
+            </Text>{" "}
             of{" "}
             <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text>{" "}
             patients

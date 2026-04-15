@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -16,9 +16,10 @@ import {
   Layout,
 } from "lucide-react-native";
 import { getDashboardScreenStyles } from "@/styles/dashboard.styles";
-import { useNavigation } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { LineChart, PieChart } from "react-native-chart-kit";
+import RiskPatientsModal from "@/components/Doctor/RiskPatientsModal";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -37,6 +38,23 @@ interface AssessmentRecord {
   name: string;
   age: number;
   bp: string;
+}
+
+type RiskLevel = "low" | "medium" | "high";
+
+interface RiskBreakdownItem {
+  key: RiskLevel;
+  label: string;
+  count: number;
+  color: string;
+}
+
+interface PatientSummary {
+  id: string;
+  name: string;
+  age: number;
+  bp?: string;
+  risk: RiskLevel;
 }
 
 // --- Mock Data ---
@@ -78,25 +96,71 @@ const DashboardScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getDashboardScreenStyles(colorScheme);
   const navigation = useNavigation();
-  // useEffect(() => {
-  //   const API_URL = "http://10.174.203.104/predict";
-  //   fetch(API_URL, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       pheinz_physiological_data: [31, 90, 60, 7.1, 90, 66],
-  //     }),
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       console.log(data.prediction);
-  //     })
-  //     .catch((error) => {
-  //       console.error("Connection error: ", error);
-  //     });
-  // }, []);
+
+  const [selectedRisk, setSelectedRisk] = useState<RiskBreakdownItem | null>(
+    null,
+  );
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const router = useRouter();
+
+  // TODO: replace with real API data
+  const patients: PatientSummary[] = useMemo(
+    () => [
+      { id: "1", name: "Sarah Johnson", age: 28, bp: "115/75", risk: "low" },
+      { id: "2", name: "Maria Garcia", age: 38, bp: "145/95", risk: "high" },
+      { id: "3", name: "Emily Chen", age: 25, bp: "122/82", risk: "low" },
+      { id: "4", name: "Aisha Patel", age: 32, bp: "135/88", risk: "medium" },
+      {
+        id: "5",
+        name: "Jessica Williams",
+        age: 22,
+        bp: "110/70",
+        risk: "medium",
+      },
+      { id: "6", name: "Linda Martinez", age: 37, bp: "148/92", risk: "high" },
+      { id: "7", name: "Priya Kumar", age: 29, bp: "118/76", risk: "low" },
+      { id: "8", name: "Amanda Brown", age: 34, bp: "132/86", risk: "low" },
+    ],
+    [],
+  );
+
+  const riskBreakdown = useMemo<RiskBreakdownItem[]>(() => {
+    const base: Record<RiskLevel, RiskBreakdownItem> = {
+      low: { key: "low", label: "Low Risk", count: 0, color: "#10B981" },
+      medium: {
+        key: "medium",
+        label: "Medium Risk",
+        count: 0,
+        color: "#F59E0B",
+      },
+      high: { key: "high", label: "High Risk", count: 0, color: "#EF4444" },
+    };
+
+    patients.forEach((p) => {
+      base[p.risk].count += 1;
+    });
+
+    return Object.values(base);
+  }, [patients]);
+
+  const totalPatients = useMemo(
+    () => riskBreakdown.reduce((sum, item) => sum + item.count, 0),
+    [riskBreakdown],
+  );
+
+  const formatPercent = (count: number) => {
+    if (!totalPatients) return "0%";
+    return `${((count / totalPatients) * 100).toFixed(1)}%`;
+  };
+
+  const handleSlicePress = (riskKey: RiskLevel) => {
+    const risk = riskBreakdown.find((r) => r.key === riskKey);
+    if (!risk) return;
+    console.log("Pie slice pressed", riskKey);
+    setSelectedRisk(risk);
+    setIsModalVisible(true);
+  };
+
   return (
     <SafeAreaView
       style={styles.safeArea}
@@ -134,32 +198,38 @@ const DashboardScreen: React.FC = () => {
         >
           <StatCard
             title="Total Patients"
-            value="8"
+            value={totalPatients}
             valueColor="#255db8ff"
             icon={<Users color="#255db8ff" size={20} />}
             iconBgColor="#DBEAFE"
           />
           <StatCard
             title="High Risk"
-            value="2"
+            value={riskBreakdown.find((r) => r.key === "high")?.count ?? 0}
             valueColor="#EF4444"
-            subtitle="25.0% of total"
+            subtitle={`${formatPercent(
+              riskBreakdown.find((r) => r.key === "high")?.count ?? 0,
+            )} of total`}
             icon={<AlertTriangle color="#EF4444" size={20} />}
             iconBgColor="#FEE2E2"
           />
           <StatCard
             title="Medium Risk"
-            value="2"
+            value={riskBreakdown.find((r) => r.key === "medium")?.count ?? 0}
             valueColor="#F59E0B"
-            subtitle="25.0% of total"
+            subtitle={`${formatPercent(
+              riskBreakdown.find((r) => r.key === "medium")?.count ?? 0,
+            )} of total`}
             icon={<Activity color="#F59E0B" size={20} />}
             iconBgColor="#FEF3C7"
           />
           <StatCard
             title="Low Risk"
-            value="4"
+            value={riskBreakdown.find((r) => r.key === "low")?.count ?? 0}
             valueColor="#10B981"
-            subtitle="50.0% of total"
+            subtitle={`${formatPercent(
+              riskBreakdown.find((r) => r.key === "low")?.count ?? 0,
+            )} of total`}
             icon={<TrendingUp color="#10B981" size={20} />}
             iconBgColor="#D1FAE5"
           />
@@ -167,36 +237,18 @@ const DashboardScreen: React.FC = () => {
 
         {/* Risk Distribution Card */}
         <View style={styles.cardContainer}>
-          <Text style={styles.cardTitle}>Risk Distribution</Text>
+          <Text style={styles.cardTitle}>Patient Risk Distribution</Text>
 
           <View style={{ alignItems: "center", justifyContent: "center" }}>
             <PieChart
-              data={[
-                {
-                  name: "Low Risk",
-                  population: 4,
-                  color: "#10B981",
-                  legendFontColor:
-                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
-                  legendFontSize: 12,
-                },
-                {
-                  name: "Medium Risk",
-                  population: 2,
-                  color: "#F59E0B",
-                  legendFontColor:
-                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
-                  legendFontSize: 12,
-                },
-                {
-                  name: "High Risk",
-                  population: 2,
-                  color: "#EF4444",
-                  legendFontColor:
-                    colorScheme === "dark" ? "#ECEDEE" : "#64748B",
-                  legendFontSize: 12,
-                },
-              ]}
+              data={riskBreakdown.map((item) => ({
+                name: `${item.label} (${item.count})`,
+                population: item.count,
+                color: item.color,
+                legendFontColor: colorScheme === "dark" ? "#ECEDEE" : "#64748B",
+                legendFontSize: 12,
+                onPress: () => handleSlicePress(item.key),
+              }))}
               width={screenWidth - 40}
               height={200}
               chartConfig={{
@@ -211,55 +263,47 @@ const DashboardScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={styles.legendLabelRow}>
-                <View
-                  style={[
-                    styles.legendColorBox,
-                    { backgroundColor: "#10B981" },
-                  ]}
-                />
-                <Text style={[styles.legendText, { color: "#10B981" }]}>
-                  Low Risk
+          {/* Fallback quick actions for web/non-touch issues */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-around",
+              marginTop: 12,
+            }}
+          >
+            {riskBreakdown.map((item) => (
+              <TouchableOpacity
+                key={`chip-${item.key}`}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: `${item.color}22`,
+                  borderWidth: 1,
+                  borderColor: `${item.color}66`,
+                }}
+                onPress={() => handleSlicePress(item.key)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.legendLabelRow}>
+                  <View
+                    style={[
+                      styles.legendColorBox,
+                      { backgroundColor: item.color },
+                    ]}
+                  />
+                  <Text style={[styles.legendText, { color: item.color }]}>
+                    {item.label}
+                  </Text>
+                </View>
+                <Text style={[styles.legendValue, { color: item.color }]}>
+                  {formatPercent(item.count)}
                 </Text>
-              </View>
-              <Text style={[styles.legendValue, { color: "#10B981" }]}>
-                50%
-              </Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={styles.legendLabelRow}>
-                <View
-                  style={[
-                    styles.legendColorBox,
-                    { backgroundColor: "#F59E0B" },
-                  ]}
-                />
-                <Text style={[styles.legendText, { color: "#F59E0B" }]}>
-                  Medium Risk
+                <Text style={{ color: item.color, fontSize: 12, marginTop: 2 }}>
+                  {item.count} patients
                 </Text>
-              </View>
-              <Text style={[styles.legendValue, { color: "#F59E0B" }]}>
-                25%
-              </Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={styles.legendLabelRow}>
-                <View
-                  style={[
-                    styles.legendColorBox,
-                    { backgroundColor: "#EF4444" },
-                  ]}
-                />
-                <Text style={[styles.legendText, { color: "#EF4444" }]}>
-                  High Risk
-                </Text>
-              </View>
-              <Text style={[styles.legendValue, { color: "#EF4444" }]}>
-                25%
-              </Text>
-            </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -355,7 +399,9 @@ const DashboardScreen: React.FC = () => {
         <View style={styles.cardContainer}>
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cardTitle}>Recent Assessments</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(drawerDoctor)/patientRecords")}
+            >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
@@ -398,6 +444,22 @@ const DashboardScreen: React.FC = () => {
             </View>
           ))}
         </View>
+
+        <RiskPatientsModal
+          visible={isModalVisible}
+          onClose={() => setIsModalVisible(false)}
+          riskLabel={selectedRisk?.label ?? ""}
+          riskColor={selectedRisk?.color ?? "#0EA5E9"}
+          patients={patients.filter((p) => p.risk === selectedRisk?.key)}
+          theme={colorScheme === "dark" ? "dark" : "light"}
+          onSelectPatient={(patientId: string) => {
+            setIsModalVisible(false);
+            router.push({
+              pathname: "/(drawerDoctor)/patientRecords/[id]",
+              params: { id: patientId },
+            });
+          }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
