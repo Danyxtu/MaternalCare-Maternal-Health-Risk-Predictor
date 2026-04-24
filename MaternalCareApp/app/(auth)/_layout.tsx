@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { KeyboardAwareContainer } from "@/components/KeyboardAwareContainer";
+import { KeyboardAwareContainer } from "#components/KeyboardAwareContainer.tsx";
 
 /**
  *  if you want to design this page make sure:

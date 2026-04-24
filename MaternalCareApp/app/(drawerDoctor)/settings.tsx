@@ -19,10 +19,10 @@ import {
   Layout,
   Mail,
 } from "lucide-react-native";
-import { getSettingsScreenStyles } from "@/styles/settings.styles";
+import { getSettingsScreenStyles } from "#/src/styles/settings.styles";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { useAuth } from "@/context/authContext";
+import { useAuth } from "#/src/context/authContext";
 
 // --- Reusable Setting Row Component ---
 interface SettingRowProps {

@@ -15,11 +15,11 @@ import {
   TrendingUp,
   Layout,
 } from "lucide-react-native";
-import { getDashboardScreenStyles } from "@/styles/dashboard.styles";
+import { getDashboardScreenStyles } from "#/src/styles/dashboard.styles";
 import { useRouter, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { LineChart, PieChart } from "react-native-chart-kit";
-import RiskPatientsModal from "@/components/Doctor/RiskPatientsModal";
+import RiskPatientsModal from "#/src/components/Doctor/RiskPatientsModal";
 
 const screenWidth = Dimensions.get("window").width;
 

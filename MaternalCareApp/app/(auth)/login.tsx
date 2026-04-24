@@ -11,16 +11,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Heart, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-import { getLoginScreenStyles } from "@/styles/login.styles";
-import { useAuth } from "@/context/authContext";
+import { getLoginScreenStyles } from "#styles/login.styles.ts";
+import { useAuth } from "#context/authContext.tsx";
 
 const LoginScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getLoginScreenStyles(colorScheme);
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Login
+  const { login } = useAuth();
+  // Login Payload
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {

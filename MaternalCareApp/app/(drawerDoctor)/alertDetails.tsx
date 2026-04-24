@@ -18,7 +18,7 @@ import {
   Heart,
   Droplet,
 } from "lucide-react-native";
-import { getAlertDetailsScreenStyles } from "@/styles/alertDetails.styles";
+import { getAlertDetailsScreenStyles } from "#/src/styles/alertDetails.styles";
 import { router } from "expo-router";
 import { CartesianChart, Bar } from "victory-native";
 import { Svg, Polygon, Line, Circle, Text as SvgText } from "react-native-svg";

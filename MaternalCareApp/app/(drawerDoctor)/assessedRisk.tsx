@@ -21,7 +21,7 @@ import {
 } from "lucide-react-native";
 import { useNavigation, useLocalSearchParams } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { getAssessedRiskStyles } from "@/styles/assessedRisk.styles";
+import { getAssessedRiskStyles } from "#/src/styles/assessedRisk.styles";
 
 // --- Types ---
 interface Feature {

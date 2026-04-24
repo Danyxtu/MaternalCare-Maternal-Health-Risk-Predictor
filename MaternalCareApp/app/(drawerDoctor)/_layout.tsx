@@ -3,8 +3,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
 import { useRouter } from "expo-router";
 
-import CustomDrawerContent from "@/components/DrawerContent";
-import { useAuth } from "@/context/authContext";
+import CustomDrawerContent from "#components/DrawerContent.tsx";
+import { useAuth } from "#context/authContext.tsx";
 
 export default function DrawerLayout() {
   const { role, isLoading } = useAuth();

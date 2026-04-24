@@ -15,7 +15,7 @@ import {
   Layout,
   ArrowRight,
 } from "lucide-react-native";
-import { getPatientDashboardStyles } from "@/styles/patientDashboard.styles";
+import { getPatientDashboardStyles } from "#/src/styles/patientDashboard.styles";
 import { useNavigation, useRouter } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 

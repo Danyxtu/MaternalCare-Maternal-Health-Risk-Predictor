@@ -1,35 +1,35 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
-  useColorScheme
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Heart } from 'lucide-react-native';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getWelcomeScreenStyles } from '@/styles/welcome.styles';
+  useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Heart } from "lucide-react-native";
+import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getWelcomeScreenStyles } from "#/src/styles/welcome.styles";
 
 const WelcomeScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const styles = getWelcomeScreenStyles(colorScheme);
 
   const handleGetStarted = async () => {
-    await AsyncStorage.setItem('hasOpened', 'true');
-    router.push('/(auth)/register');
+    await AsyncStorage.setItem("hasOpened", "true");
+    router.push("/(auth)/register");
   };
 
   const handleLogin = async () => {
-    await AsyncStorage.setItem('hasOpened', 'true');
-    router.push('/(auth)/login');
+    console.log("handleLogin triggered");
+    await AsyncStorage.setItem("hasOpened", "true");
+    router.push("/(auth)/login");
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-
         {/* Top Section: Graphic / Illustration area */}
         <View style={styles.graphicContainer}>
           {/* We use a styled view as a placeholder for a nice vector illustration. 
@@ -43,7 +43,8 @@ const WelcomeScreen: React.FC = () => {
         <View style={styles.textContainer}>
           <Text style={styles.title}>Welcome to MaternalCare</Text>
           <Text style={styles.subtitle}>
-            Empowering maternal health with real-time monitoring and predictive risk assessment for a safer journey.
+            Empowering maternal health with real-time monitoring and predictive
+            risk assessment for a safer journey.
           </Text>
         </View>
 
@@ -57,13 +58,14 @@ const WelcomeScreen: React.FC = () => {
           </TouchableOpacity>
 
           <View style={styles.loginRow}>
-            <Text style={styles.loginTextPrompt}>Already have an account? </Text>
+            <Text style={styles.loginTextPrompt}>
+              Already have an account?{" "}
+            </Text>
             <TouchableOpacity onPress={handleLogin}>
               <Text style={styles.loginTextLink}>Log In</Text>
             </TouchableOpacity>
           </View>
         </View>
-
       </View>
     </SafeAreaView>
   );

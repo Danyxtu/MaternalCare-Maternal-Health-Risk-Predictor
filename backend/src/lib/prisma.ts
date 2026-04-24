@@ -1,8 +1,8 @@
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient } from "../generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pkg from "pg";
 const { Pool } = pkg;
-import { DATABASE_URL } from "../config/db.js";
+import { DATABASE_URL } from "../config/db.ts";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 

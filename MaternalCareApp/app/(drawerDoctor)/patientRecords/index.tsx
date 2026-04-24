@@ -13,7 +13,7 @@ import { Layout, Search, Filter, ChevronRight } from "lucide-react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 
-import { getPatientRecordsScreenStyles } from "@/styles/patientRecords.styles";
+import { getPatientRecordsScreenStyles } from "#/src/styles/patientRecords.styles";
 
 // --- Types ---
 interface PatientRecord {

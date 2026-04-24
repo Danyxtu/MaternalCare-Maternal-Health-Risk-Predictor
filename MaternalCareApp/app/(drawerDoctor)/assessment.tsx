@@ -19,10 +19,10 @@ import {
   Droplet,
   Thermometer,
 } from "lucide-react-native";
-import { getNewAssessmentScreenStyles } from "@/styles/assessment.styles";
+import { getNewAssessmentScreenStyles } from "#/src/styles/assessment.styles";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import api from "@/api/api";
+import api from "#api/api.ts";
 import { useRouter } from "expo-router";
 
 // --- Types ---

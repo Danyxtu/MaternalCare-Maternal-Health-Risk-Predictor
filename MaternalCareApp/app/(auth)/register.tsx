@@ -12,19 +12,23 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Heart, User, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-import { getRegisterScreenStyles } from "@/styles/register.styles";
-import api from "@/api/api";
+import { getRegisterScreenStyles } from "#styles/register.styles.ts";
+
+import { register } from "#modules/auth/auth.service.ts";
 
 const RegistrationScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getRegisterScreenStyles(colorScheme);
+
+  // Form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"patient" | "doctor">("patient");
+  const [role, setRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,13 +53,13 @@ const RegistrationScreen: React.FC = () => {
       const payload = {
         email,
         password,
-        first_name: firstName || undefined,
-        last_name: lastName || undefined,
-        middle_initial: middleInitial || undefined,
-        role: role.toUpperCase(),
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        middleInitial: middleInitial || undefined,
+        role: role, // "PATIENT" or "DOCTOR"
       };
 
-      await api.post("/auth/register", payload);
+      await register(payload);
 
       // On success, redirect to login (or auto-login if desired)
       router.replace("/(auth)/login");
@@ -158,14 +162,14 @@ const RegistrationScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.roleOption,
-                    role === "patient" && styles.roleOptionActive,
+                    role === "PATIENT" && styles.roleOptionActive,
                   ]}
-                  onPress={() => setRole("patient")}
+                  onPress={() => setRole("PATIENT")}
                 >
                   <Text
                     style={[
                       styles.roleOptionText,
-                      role === "patient" && styles.roleOptionTextActive,
+                      role === "PATIENT" && styles.roleOptionTextActive,
                     ]}
                   >
                     Patient
@@ -174,14 +178,14 @@ const RegistrationScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.roleOption,
-                    role === "doctor" && styles.roleOptionActive,
+                    role === "DOCTOR" && styles.roleOptionActive,
                   ]}
-                  onPress={() => setRole("doctor")}
+                  onPress={() => setRole("DOCTOR")}
                 >
                   <Text
                     style={[
                       styles.roleOptionText,
-                      role === "doctor" && styles.roleOptionTextActive,
+                      role === "DOCTOR" && styles.roleOptionTextActive,
                     ]}
                   >
                     Doctor

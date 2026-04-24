@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from "express";
-import e from "express";
 import jwt from "jsonwebtoken";
 import "@/src/types/express.d.ts"; // Import your custom type definitions
 

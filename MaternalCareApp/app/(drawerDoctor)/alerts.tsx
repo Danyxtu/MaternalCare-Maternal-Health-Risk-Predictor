@@ -15,7 +15,7 @@ import {
   TrendingUp,
   Clock,
 } from "lucide-react-native";
-import { getAlertsScreenStyles } from "@/styles/alerts.styles";
+import { getAlertsScreenStyles } from "#/src/styles/alerts.styles";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 

@@ -20,11 +20,11 @@ import {
   Thermometer,
   Calendar,
 } from "lucide-react-native";
-import { getPatientAssessmentStyles } from "@/styles/patientAssessment.styles";
+import { getPatientAssessmentStyles } from "#/src/styles/patientAssessment.styles";
 import { useNavigation, useRouter } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { useAuth } from "@/context/authContext";
-import api from "@/api/api";
+import { useAuth } from "#/src/context/authContext";
+import api from "#/src/api/api";
 
 // --- Types ---
 interface InputFieldProps {
@@ -97,7 +97,14 @@ const SelfAssessmentScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!age || !systolic || !diastolic || !bloodSugar || !temperature || !heartRate) {
+    if (
+      !age ||
+      !systolic ||
+      !diastolic ||
+      !bloodSugar ||
+      !temperature ||
+      !heartRate
+    ) {
       showToast("Please fill in all fields.");
       return;
     }
@@ -120,7 +127,8 @@ const SelfAssessmentScreen: React.FC = () => {
       });
     } catch (error: any) {
       console.error("Assessment Error:", error);
-      const msg = error.response?.data?.error || "Failed to process assessment.";
+      const msg =
+        error.response?.data?.error || "Failed to process assessment.";
       showToast(msg);
     } finally {
       setLoading(false);

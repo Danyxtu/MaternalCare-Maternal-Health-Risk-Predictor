@@ -2,6 +2,21 @@
   "name": "frontend",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "type": "module",
+  "imports": {
+    "#/*": "./src*/*",
+    "#components/*": "./src/components/*",
+    "#screens/*": "./src/screens/*",
+    "#utils/*": "./src/utils/*",
+    "#hooks/*": "./src/hooks/*",
+    "#assets/*": "./src/assets/*",
+    "#services/*": "./src/services/*",
+    "#types/*": "./src/types/*",
+    "#api/*": "./src/api/*",
+    "#styles/*": "./src/styles/*",
+    "#modules/*": "./src/modules/*",
+    "#context/*": "./src/context/*"
+  },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -56,6 +71,7 @@
     "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "~5.9.2"
   },
   "private": true

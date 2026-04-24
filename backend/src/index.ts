@@ -12,3 +12,12 @@ app.listen(PORT, "0.0.0.0", () =>
 );
 
 app.use("/api", rootRouter);
+
+// Test
+app.get("/api/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "API is working!",
+    timeStamp: new Date().toISOString(),
+  });
+});

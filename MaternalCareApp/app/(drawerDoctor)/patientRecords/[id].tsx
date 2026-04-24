@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
-import { getPatientRecordsScreenStyles } from "@/styles/patientRecords.styles";
+import { getPatientRecordsScreenStyles } from "#/src/styles/patientRecords.styles";
 
 // --- Types ---
 type RiskLevel = "Low" | "Moderate" | "High";

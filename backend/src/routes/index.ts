@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 // Imported Routes
-import authRoutes from "./authRoutes.ts";
+import authRoutes from "@/src/modules/auth/auth.routes.ts";
 import modelRoutes from "./model.ts";
 import assessmentRoutes from "./assessmentRoutes.ts";
 import patientRoutes from "./patientRoutes.ts";
@@ -12,7 +12,10 @@ import notificationRoutes from "./notificationRoutes.ts";
 const router = Router();
 
 // Routes
+// Upgraded
 router.use("/auth", authRoutes);
+
+// Not yet upgraded
 router.use("/model", modelRoutes);
 router.use("/assessments", assessmentRoutes);
 router.use("/patients", patientRoutes);

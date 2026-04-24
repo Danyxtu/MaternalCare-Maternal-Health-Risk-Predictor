@@ -1,26 +1,29 @@
 import React, { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useAuth, AuthProvider } from "@/context/authContext";
+import { useAuth, AuthProvider } from "#/src/context/authContext";
 import { ActivityIndicator, View } from "react-native";
+
 const RootLayout = () => {
   const { userToken, role, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    console.log("Navigation segments:", segments);
+    console.log("Auth State:", { userToken: !!userToken, role, isLoading });
+    
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inWelcomePage = segments[0] === "welcomePage";
     const inDoctorGroup = segments[0] === "(drawerDoctor)";
     const inPatientGroup = segments[0] === "(drawerPatient)";
 
-    if (!userToken) {
-      if (!inAuthGroup) router.replace("/welcomePage");
-      return;
-    }
-
-    if (!role) {
-      router.replace("/welcomePage");
+    if (!userToken || !role) {
+      if (!inAuthGroup && !inWelcomePage) {
+        console.log("Redirecting to welcomePage: Missing token or role.");
+        router.replace("/welcomePage");
+      }
       return;
     }
 
