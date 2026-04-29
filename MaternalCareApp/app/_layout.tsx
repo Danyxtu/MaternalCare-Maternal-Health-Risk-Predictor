@@ -11,13 +11,12 @@ const RootLayout = () => {
   useEffect(() => {
     console.log("Navigation segments:", segments);
     console.log("Auth State:", { userToken: !!userToken, role, isLoading });
-    
+
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
     const inWelcomePage = segments[0] === "welcomePage";
     const inDoctorGroup = segments[0] === "(drawerDoctor)";
-    const inPatientGroup = segments[0] === "(drawerPatient)";
 
     if (!userToken || !role) {
       if (!inAuthGroup && !inWelcomePage) {
@@ -27,14 +26,9 @@ const RootLayout = () => {
       return;
     }
 
-    const targetRoute =
-      role === "DOCTOR"
-        ? "/(drawerDoctor)/dashboard"
-        : "/(drawerPatient)/dashboard";
+    const targetRoute = "/(drawerDoctor)/(tabs)/dashboard";
 
-    const isInCorrectGroup =
-      (role === "DOCTOR" && inDoctorGroup) ||
-      (role === "PATIENT" && inPatientGroup);
+    const isInCorrectGroup = inDoctorGroup;
 
     if (inAuthGroup || !isInCorrectGroup) {
       router.replace(targetRoute);
@@ -54,7 +48,6 @@ const RootLayout = () => {
       <Stack.Screen name="welcomePage" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(drawerDoctor)" options={{ headerShown: false }} />
-      <Stack.Screen name="(drawerPatient)" options={{ headerShown: false }} />
     </Stack>
   );
 };

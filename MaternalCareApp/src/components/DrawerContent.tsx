@@ -19,6 +19,7 @@ import {
   Settings,
   User,
   LogOut,
+  BrainCircuit,
 } from "lucide-react-native";
 import { getDrawerContentStyles } from "#/src/styles/drawer.styles";
 import { useAuth } from "#/src/context/authContext";
@@ -50,14 +51,6 @@ const DrawerItem: React.FC<DrawerItemProps> = ({
         ? "#CBD5E1"
         : "#334155";
   const bgColor = isActive ? "#FFF1F2" : "transparent";
-
-  // Logout
-  const { logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/(auth)/login");
-  };
 
   return (
     <TouchableOpacity
@@ -91,6 +84,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     if (pathname.includes("/alerts")) return "Alerts";
     if (pathname.includes("/settings")) return "Settings";
     if (pathname.includes("/profile")) return "My Profile";
+    if (pathname.includes("/model")) return "AI Model";
     return "";
   };
 
@@ -147,7 +141,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Dashboard"}
-              onPress={() => router.push("/(drawerDoctor)/dashboard")}
+              onPress={() => router.push("/(drawerDoctor)/(tabs)/dashboard")}
             />
             <DrawerItem
               label="Patient Records"
@@ -160,7 +154,9 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Patient Records"}
-              onPress={() => router.push("/(drawerDoctor)/patientRecords")}
+              onPress={() =>
+                router.push("/(drawerDoctor)/(tabs)/patientRecords")
+              }
             />
             <DrawerItem
               label="New Assessment"
@@ -173,7 +169,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "New Assessment"}
-              onPress={() => router.push("/(drawerDoctor)/assessment")}
+              onPress={() => router.push("/(drawerDoctor)/(tabs)/assessment")}
             />
             <DrawerItem
               label="Alerts"
@@ -184,11 +180,11 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Alerts"}
-              onPress={() => router.push("/(drawerDoctor)/alerts")}
+              onPress={() => router.push("/(drawerDoctor)/(tabs)/alerts")}
             />
           </View>
 
-          {/* Secondary Nav (Suggested Additions) */}
+          {/* Secondary Nav */}
           <View style={styles.navGroup}>
             <View style={styles.subDivider} />
             <DrawerItem
@@ -211,7 +207,18 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Settings"}
-              onPress={() => router.push("/(drawerDoctor)/settings")}
+              onPress={() => router.push("/(drawerDoctor)/(tabs)/settings")}
+            />
+            <DrawerItem
+              label="AI Model"
+              icon={
+                <BrainCircuit
+                  color={activeRoute === "AI Model" ? "#E11D48" : "#475569"}
+                  size={20}
+                />
+              }
+              isActive={activeRoute === "AI Model"}
+              onPress={() => router.push("/(drawerDoctor)/(tabs)/model")}
             />
           </View>
         </ScrollView>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   useColorScheme,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -35,6 +36,14 @@ interface InputFieldProps {
   onChangeText: (text: string) => void;
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
   isRequired?: boolean;
+}
+
+interface ExistingPatient {
+  id: string;
+  name: string;
+  age: number;
+  bp?: string;
+  risk?: string;
 }
 
 // --- Reusable Components ---
@@ -82,19 +91,16 @@ const NewAssessmentScreen: React.FC = () => {
     { key: "existing", label: "Existing Patient" },
     { key: "new", label: "New Patient" },
   ];
-  const existingPatients = [
-    { id: "1", firstName: "Amelia", lastName: "Reyes" },
-    { id: "2", firstName: "Bianca", lastName: "Santos" },
-    { id: "3", firstName: "Clara", lastName: "Domingo" },
-    { id: "4", firstName: "Diana", lastName: "Flores" },
-    { id: "5", firstName: "Elena", lastName: "Garcia" },
-  ];
   // Form State
   const [patientType, setPatientType] = useState<"existing" | "new">(
     "existing",
   );
   const [existingSearch, setExistingSearch] = useState("");
   const [selectedPatientName, setSelectedPatientName] = useState("");
+  const [existingPatients, setExistingPatients] = useState<ExistingPatient[]>(
+    [],
+  );
+  const [refreshing, setRefreshing] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
@@ -106,15 +112,41 @@ const NewAssessmentScreen: React.FC = () => {
   const [heartRate, setHeartRate] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const fetchExistingPatients = async () => {
+    try {
+      const response = await api.get("/patients");
+      const patients = (response.data?.data ?? []) as ExistingPatient[];
+      setExistingPatients(patients);
+    } catch (error) {
+      console.error("Failed to fetch patients:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchExistingPatients();
+  }, []);
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchExistingPatients();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const filteredPatients = useMemo(() => {
     const query = existingSearch.trim().toLowerCase();
     if (!query) return existingPatients;
     return existingPatients.filter((patient) => {
-      const initials =
-        `${patient.firstName[0]}${patient.lastName[0]}`.toLowerCase();
-      const nameMatch = `${patient.firstName} ${patient.lastName}`
-        .toLowerCase()
-        .includes(query);
+      const name = patient.name?.trim() ?? "";
+      const parts = name.split(/\s+/).filter(Boolean);
+      const firstInitial = parts[0]?.[0] ?? "";
+      const lastInitial =
+        parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+      const initials = `${firstInitial}${lastInitial}`.toLowerCase();
+
+      const nameMatch = name.toLowerCase().includes(query);
       const initialsMatch = initials.startsWith(
         query.replace(/\s+/g, "").slice(0, 2),
       );
@@ -202,6 +234,14 @@ const NewAssessmentScreen: React.FC = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#10B981"]}
+              tintColor={colorScheme === "dark" ? "#ECEDEE" : "#10B981"}
+            />
+          }
         >
           {/* Form Card */}
           <View style={styles.card}>
@@ -250,8 +290,17 @@ const NewAssessmentScreen: React.FC = () => {
                 />
                 <View style={styles.suggestionContainer}>
                   {filteredPatients.map((patient) => {
-                    const formattedName = `${patient.firstName} ${patient.lastName}`;
-                    const initials = `${patient.firstName[0]}${patient.lastName[0]}`;
+                    const formattedName = patient.name;
+                    const parts = (patient.name ?? "")
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean);
+                    const firstInitial = parts[0]?.[0] ?? "";
+                    const lastInitial =
+                      parts.length > 1
+                        ? (parts[parts.length - 1]?.[0] ?? "")
+                        : "";
+                    const initials = `${firstInitial}${lastInitial}`;
                     const isActive = selectedPatientName === formattedName;
                     return (
                       <TouchableOpacity
@@ -398,7 +447,9 @@ const NewAssessmentScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push("/patientRecords")}
+              onPress={() =>
+                router.push("/(drawerDoctor)/(tabs)/patientRecords")
+              }
               style={styles.secondaryButton}
             >
               <Text style={styles.secondaryButtonText}>Cancel</Text>

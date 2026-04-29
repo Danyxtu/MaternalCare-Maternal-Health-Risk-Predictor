@@ -13,11 +13,7 @@ export default function DrawerLayout() {
   useEffect(() => {
     if (isLoading) return;
     if (role !== "DOCTOR") {
-      if (role === "PATIENT") {
-        router.replace("/(drawerPatient)/dashboard");
-      } else {
-        router.replace("/welcomePage");
-      }
+      router.replace("/welcomePage");
     }
   }, [role, isLoading, router]);
 
@@ -26,93 +22,44 @@ export default function DrawerLayout() {
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          headerShown: true,
+          headerShown: false,
           drawerType: "slide",
           overlayColor: "transparent",
           drawerStyle: {
             backgroundColor: "#f8f9fa",
             width: "100%",
           },
-          // Customizing the transition speed
-          // @ts-ignore - transitionSpec is supported but sometimes types lag
-          transitionSpec: {
-            open: {
-              animation: "timing",
-              config: {
-                duration: 3000, // Extremely slow opening
-              },
-            },
-            close: {
-              animation: "timing",
-              config: {
-                duration: 3000, // Extremely slow closing
-              },
-            },
-          },
         }}
       >
+        {/* The Tabs are the primary screen in the Drawer */}
         <Drawer.Screen
-          name="dashboard"
+          name="(tabs)"
           options={{
-            title: "Home",
-            drawerLabel: "Dashboard",
-            headerShown: false,
+            title: "Main",
+            drawerLabel: "Main Menu",
           }}
         />
-        <Drawer.Screen
-          name="patientRecords"
-          options={{
-            title: "Patient Records",
-            drawerLabel: "Patient Records",
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="assessment"
-          options={{
-            title: "Assessment",
-            drawerLabel: "New Assessment",
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="alerts"
-          options={{
-            title: "Alerts",
-            drawerLabel: "Alerts",
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="settings"
-          options={{
-            title: "Settings",
-            drawerLabel: "Settings",
-            headerShown: false,
-          }}
-        />
+
+        {/* Additional Screens accessible from Drawer and outside */}
         <Drawer.Screen
           name="profile"
           options={{
             title: "Profile",
             drawerLabel: "My Profile",
-            headerShown: false,
           }}
         />
+
+        {/* Hidden Stack Screens */}
         <Drawer.Screen
           name="alertDetails"
           options={{
-            title: "Alert Details",
-            drawerLabel: () => null,
-            headerShown: false,
+            drawerItemStyle: { display: "none" },
           }}
         />
         <Drawer.Screen
           name="assessedRisk"
           options={{
-            title: "Assessed Risk",
-            drawerLabel: () => null,
-            headerShown: false,
+            drawerItemStyle: { display: "none" },
           }}
         />
       </Drawer>

@@ -54,7 +54,7 @@ const WelcomeScreen: React.FC = () => {
             style={styles.primaryButton}
             onPress={handleGetStarted}
           >
-            <Text style={styles.primaryButtonText}>Get Started</Text>
+            <Text style={styles.primaryButtonText}>Create Account</Text>
           </TouchableOpacity>
 
           <View style={styles.loginRow}>

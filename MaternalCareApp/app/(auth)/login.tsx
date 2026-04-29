@@ -113,12 +113,18 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Section: Sign Up Link */}
+        {/* Bottom Section */}
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
-            <Text style={styles.signUpText}>Register here</Text>
+            <Text style={styles.signUpText}>Create Account</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={{ alignItems: "center", marginTop: 12 }}>
+          <Text style={styles.footerText}>
+            Maternal Health Monitoring System
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

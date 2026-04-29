@@ -1,18 +1,18 @@
 import axios from "axios";
-// import "dotenv/config";
+import * as SecureStore from "expo-secure-store";
 
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL + ":3000/api";
+const BASE_URL = (process.env.EXPO_PUBLIC_BASE_URL ? process.env.EXPO_PUBLIC_BASE_URL + ":3000" : "http://localhost:3000") + "/api";
 
 const api = axios.create({
-  baseURL: BASE_URL as string,
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 // Attach token to every request if available
-api.interceptors.request.use((config) => {
-  const token = process.env.EXPO_PUBLIC_API_KEY;
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync("userToken");
   if (token && config.headers) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }

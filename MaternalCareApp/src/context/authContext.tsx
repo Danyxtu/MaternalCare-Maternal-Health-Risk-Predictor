@@ -26,10 +26,7 @@ interface DecodedToken {
 const TOKEN_KEY = "userToken";
 const ROLE_KEY = "userRole";
 
-const PORT = 3000;
-const HOST_URL = process.env.EXPO_PUBLIC_BASE_URL || "http://10.32.88.104";
-const hosturl = HOST_URL + ":" + PORT;
-const baseURL = hosturl + "/api";
+const baseURL = (process.env.EXPO_PUBLIC_BASE_URL ? process.env.EXPO_PUBLIC_BASE_URL + ":3000" : "http://localhost:3000") + "/api";
 
 axios.defaults.baseURL = baseURL;
 
@@ -93,6 +90,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("LOGIN RESPONSE:", response.data);
       console.log("TOKEN:", token);
       const decodedRole = decodeRoleFromToken(token);
+      
+      if (decodedRole !== "DOCTOR") {
+        throw new Error("ONLY_DOCTORS_ALLOWED");
+      }
+
       const effectiveRole = decodedRole;
 
       await SecureStore.setItemAsync(TOKEN_KEY, String(token));

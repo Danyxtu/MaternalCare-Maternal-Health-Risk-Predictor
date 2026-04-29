@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   FlatList,
   ListRenderItem,
   useColorScheme,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Layout, Search, Filter, ChevronRight } from "lucide-react-native";
@@ -14,6 +16,7 @@ import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 
 import { getPatientRecordsScreenStyles } from "#/src/styles/patientRecords.styles";
+import { get } from "#/src/api/api";
 
 // --- Types ---
 interface PatientRecord {
@@ -21,34 +24,50 @@ interface PatientRecord {
   name: string;
   age: number;
   bp: string;
-  bloodSugar: number;
+  risk: string;
 }
-
-// --- Mock Data ---
-const patientsData: PatientRecord[] = [
-  { id: "1", name: "Sarah\nJohnson", age: 28, bp: "115/75", bloodSugar: 92 },
-  { id: "2", name: "Maria\nGarcia", age: 38, bp: "145/95", bloodSugar: 110 },
-  { id: "3", name: "Emily\nChen", age: 25, bp: "122/82", bloodSugar: 88 },
-  { id: "4", name: "Aisha\nPatel", age: 32, bp: "135/88", bloodSugar: 105 },
-  { id: "5", name: "Jessica\nWilliams", age: 22, bp: "110/70", bloodSugar: 85 },
-  { id: "6", name: "Linda\nMartinez", age: 37, bp: "148/92", bloodSugar: 128 },
-  { id: "7", name: "Priya\nKumar", age: 29, bp: "118/76", bloodSugar: 90 },
-  { id: "8", name: "Amanda\nBrown", age: 34, bp: "132/86", bloodSugar: 102 },
-];
 
 const PatientRecordsScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getPatientRecordsScreenStyles(colorScheme);
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation();
+  const [patients, setPatients] = useState<PatientRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  const fetchPatients = async ({ showLoader = true } = {}) => {
+    try {
+      if (showLoader) setIsLoading(true);
+      const response = await get("/patients");
+      setPatients(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch patients:", error);
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchPatients({ showLoader: false });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredPatients = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    if (!query) return patientsData;
-    return patientsData.filter((patient) =>
-      patient.name.toLowerCase().replace("\n", " ").includes(query),
+    if (!query) return patients;
+    return patients.filter((patient) =>
+      patient.name.toLowerCase().includes(query),
     );
-  }, [searchQuery]);
+  }, [searchQuery, patients]);
 
   // --- Render Items ---
   const renderItem: ListRenderItem<PatientRecord> = ({ item }) => (
@@ -56,7 +75,7 @@ const PatientRecordsScreen: React.FC = () => {
       style={styles.tableRowButton}
       onPress={() =>
         router.push({
-          pathname: "/(drawerDoctor)/patientRecords/[id]",
+          pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
           params: { id: item.id },
         })
       }
@@ -70,12 +89,12 @@ const PatientRecordsScreen: React.FC = () => {
           <Text style={styles.cellText}>{item.age}</Text>
         </View>
         <View style={[styles.cell, styles.colBP]}>
-          <Text style={styles.cellText}>{item.bp}</Text>
+          <Text style={styles.cellText}>{item.bp || "N/A"}</Text>
           <Text style={styles.unitText}>mmHg</Text>
         </View>
         <View style={[styles.cell, styles.colSugar]}>
-          <Text style={styles.cellText}>{item.bloodSugar}</Text>
-          <Text style={styles.unitText}>mg/dL</Text>
+          <Text style={styles.cellText}>{item.risk}</Text>
+          <Text style={styles.unitText}>Risk</Text>
         </View>
         <ChevronRight
           size={18}
@@ -99,7 +118,10 @@ const PatientRecordsScreen: React.FC = () => {
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity style={styles.filterButton}>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => fetchPatients()}
+        >
           <Filter color="#94A3B8" size={20} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.extraFilterBox} />
@@ -115,7 +137,7 @@ const PatientRecordsScreen: React.FC = () => {
           Blood{"\n"}Pressure
         </Text>
         <Text style={[styles.tableHeaderText, styles.colSugar]}>
-          Blood{"\n"}Sugar
+          Health{"\n"}Risk
         </Text>
       </View>
     </>
@@ -146,14 +168,29 @@ const PatientRecordsScreen: React.FC = () => {
       </View>
 
       <View style={styles.container}>
-        <FlatList
-          data={filteredPatients}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListHeaderComponent={ListHeader}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        {isLoading ? (
+          <ActivityIndicator
+            size="large"
+            color="#10B981"
+            style={{ marginTop: 20 }}
+          />
+        ) : (
+          <FlatList
+            data={filteredPatients}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            ListHeaderComponent={ListHeader}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#10B981"]}
+              />
+            }
+          />
+        )}
 
         {/* Fixed Bottom Bar */}
         <View style={styles.bottomBar}>
@@ -162,12 +199,11 @@ const PatientRecordsScreen: React.FC = () => {
             <Text style={styles.bottomBarTextBold}>
               {filteredPatients.length}
             </Text>{" "}
-            of{" "}
-            <Text style={styles.bottomBarTextBold}>{patientsData.length}</Text>{" "}
+            of <Text style={styles.bottomBarTextBold}>{patients.length}</Text>{" "}
             patients
           </Text>
           <TouchableOpacity
-            onPress={() => router.push("/assessment")}
+            onPress={() => router.push("/(drawerDoctor)/(tabs)/assessment")}
             style={styles.newAssessmentButton}
           >
             <Text style={styles.newAssessmentButtonText}>New Assessment</Text>
