@@ -1,23 +1,20 @@
-import pkg from "pg";
-const { Pool } = pkg;
-import "dotenv/config";
-
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT || "5432", 10),
-});
-
-pool.query("SELECT NOW()", (err, res) => {
-  if (err) {
-    console.log("Database Connection failed: ", err.stack);
-  } else {
-    console.log("Database Connected at: ", res.rows[0].now);
-  }
-});
-
-export const query = (text: string, params?: any[]) => {
-  return pool.query(text, params);
+const dbConfig = {
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD || "Danny12345",
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  name: process.env.DB_NAME || "maternal_care_db",
 };
+
+export const DATABASE_URL =
+  `postgresql://${dbConfig.user}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.name}` ||
+  "postgresql://postgres:Danny12345@localhost:5432/maternal_care_db";
+
+/**
+ * PostgreSQL connection string format:
+ * postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
+ * Example:
+ * postgresql://postgres:Danny12345@localhost:5432/maternal_care_db
+ * mysql example:
+ * mysql://user:password@host:port/database
+ */

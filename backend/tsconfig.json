@@ -1,6 +1,9 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    },
     // File Layout
     // "rootDir": "./src",
     // "outDir": "./dist",
@@ -19,6 +22,8 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -40,8 +45,5 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  },
-  "paths": {
-    "@/*": ["./*"]
   }
 }
