@@ -1,4 +1,4 @@
-import { Role, AlertSeverity, AlertStatus, AlertType } from "../src/generated/prisma/enums.ts";
+import { Role, AlertSeverity, AlertStatus, AlertType } from "../src/generated/prisma/index.js";
 import { prisma } from "../src/lib/prisma.ts";
 
 async function main() {
@@ -38,11 +38,11 @@ async function main() {
   console.log({ doctorUser });
 
   const patientsData = [
-    { email: "pheinz@test.com", first_name: "Pheinz", last_name: "Test", age: 25, risk: "high", bp: "145/95", bloodSugar: 110, heartRate: 92 },
-    { email: "niljin@test.com", first_name: "Niljin", last_name: "Test", age: 28, risk: "low", bp: "115/75", bloodSugar: 90, heartRate: 72 },
-    { email: "hannah@test.com", first_name: "Hannah", last_name: "Test", age: 30, risk: "medium", bp: "135/88", bloodSugar: 105, heartRate: 85 },
-    { email: "junay@test.com", first_name: "Junay", last_name: "Test", age: 22, risk: "low", bp: "110/70", bloodSugar: 85, heartRate: 68 },
-    { email: "erica@test.com", first_name: "Erica", last_name: "Test", age: 27, risk: "high", bp: "148/92", bloodSugar: 128, heartRate: 105 },
+    { email: "pheinz@test.com", first_name: "Pheinz", last_name: "Test", age: 25, risk: "high", bp: "145/95", bloodSugar: 6.1, heartRate: 92 },
+    { email: "niljin@test.com", first_name: "Niljin", last_name: "Test", age: 28, risk: "low", bp: "115/75", bloodSugar: 5.0, heartRate: 72 },
+    { email: "hannah@test.com", first_name: "Hannah", last_name: "Test", age: 30, risk: "medium", bp: "135/88", bloodSugar: 5.8, heartRate: 85 },
+    { email: "junay@test.com", first_name: "Junay", last_name: "Test", age: 22, risk: "low", bp: "110/70", bloodSugar: 4.7, heartRate: 68 },
+    { email: "erica@test.com", first_name: "Erica", last_name: "Test", age: 27, risk: "high", bp: "148/92", bloodSugar: 7.1, heartRate: 105 },
   ];
 
   for (const p of patientsData) {
@@ -77,9 +77,15 @@ async function main() {
           physiological_data: {
             SystolicBP: parseInt(p.bp.split('/')[0]),
             DiastolicBP: parseInt(p.bp.split('/')[1]),
-            BloodSugar: p.bloodSugar,
+            BS: p.bloodSugar,
             HeartRate: p.heartRate,
-            BP: p.bp
+            BodyTemp: 37.0,
+            Age: p.age,
+            sleep_hours: 8,
+            hemoglobin_g_dL: 12,
+            iron_supplement: 1,
+            folic_supplement: 1,
+            diet_adherence: "Good"
           },
           model_version: "1.0",
           risk_score: p.risk === "high" ? 0.9 : p.risk === "medium" ? 0.5 : 0.1,

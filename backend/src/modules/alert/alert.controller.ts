@@ -1,11 +1,19 @@
 import type { Request, Response } from "express";
 import { AlertService } from "./alert.service.ts";
+import { prisma } from "@/src/lib/prisma.ts";
 
 const alertService = new AlertService();
 
 export const getAlerts = async (req: Request, res: Response) => {
   try {
-    const alerts = await alertService.getAlerts();
+    const userId = Number((req.user as any).id);
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    
+    if (!doctor) {
+      return res.status(403).json({ message: "Only doctors can view alerts" });
+    }
+
+    const alerts = await alertService.getAlerts(doctor.id);
     res.status(200).json({
       message: "Alerts retrieved successfully",
       data: alerts,
@@ -18,7 +26,14 @@ export const getAlerts = async (req: Request, res: Response) => {
 
 export const getAlertStats = async (req: Request, res: Response) => {
   try {
-    const stats = await alertService.getAlertStats();
+    const userId = Number((req.user as any).id);
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    
+    if (!doctor) {
+      return res.status(403).json({ message: "Only doctors can view alert stats" });
+    }
+
+    const stats = await alertService.getAlertStats(doctor.id);
     res.status(200).json({
       message: "Alert stats retrieved successfully",
       data: stats,

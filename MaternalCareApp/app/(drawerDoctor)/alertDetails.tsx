@@ -381,7 +381,7 @@ const AlertDetailsScreen: React.FC = () => {
             iconBgColor="#DBEAFE"
             label="Blood Sugar"
             value="110"
-            unit="mg/dL"
+            unit="mmol/L"
           />
         </ScrollView>
 

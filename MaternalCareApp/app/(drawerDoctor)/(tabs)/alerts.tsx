@@ -170,7 +170,7 @@ const AlertCard: React.FC<{ alert: AlertData }> = ({ alert }) => {
             Blood Sugar
           </Text>
           <Text style={[styles.vitalValue, { color: theme.textMain }]}>
-            {alert.bloodSugar} mg/dL
+            {alert.bloodSugar} mmol/L
           </Text>
         </View>
         <View style={styles.vitalItem}>

@@ -207,7 +207,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 />
               }
               isActive={activeRoute === "Settings"}
-              onPress={() => router.push("/(drawerDoctor)/(tabs)/settings")}
+              onPress={() => router.push("/(drawerDoctor)/settings")}
             />
             <DrawerItem
               label="AI Model"

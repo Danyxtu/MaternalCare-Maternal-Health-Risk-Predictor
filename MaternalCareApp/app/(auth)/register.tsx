@@ -27,7 +27,6 @@ const RegistrationScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +55,7 @@ const RegistrationScreen: React.FC = () => {
         firstName: firstName || undefined,
         lastName: lastName || undefined,
         middleInitial: middleInitial || undefined,
-        role: role, // "PATIENT" or "DOCTOR"
+        role: "DOCTOR",
       };
 
       await register(payload);
@@ -152,45 +151,6 @@ const RegistrationScreen: React.FC = () => {
                   value={email}
                   onChangeText={setEmail}
                 />
-              </View>
-            </View>
-
-            {/* Role Selector */}
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Role</Text>
-              <View style={styles.roleOptionsRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.roleOption,
-                    role === "PATIENT" && styles.roleOptionActive,
-                  ]}
-                  onPress={() => setRole("PATIENT")}
-                >
-                  <Text
-                    style={[
-                      styles.roleOptionText,
-                      role === "PATIENT" && styles.roleOptionTextActive,
-                    ]}
-                  >
-                    Patient
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.roleOption,
-                    role === "DOCTOR" && styles.roleOptionActive,
-                  ]}
-                  onPress={() => setRole("DOCTOR")}
-                >
-                  <Text
-                    style={[
-                      styles.roleOptionText,
-                      role === "DOCTOR" && styles.roleOptionTextActive,
-                    ]}
-                  >
-                    Doctor
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
 

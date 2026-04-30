@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { authEvents } from "../utils/eventEmitter";
 
 // --- Types ---
 type UserRole = "DOCTOR" | "PATIENT";
@@ -66,8 +67,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const persistedRole = await SecureStore.getItemAsync(ROLE_KEY);
         storedRole = normalizeRole(persistedRole);
 
-        if (token && !storedRole) {
-          storedRole = decodeRoleFromToken(token);
+        if (token) {
+          try {
+            // Verify token with backend
+            console.log("[AuthContext] Verifying session with backend...");
+            const response = await axios.get(baseURL + "/auth/profile", {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("[AuthContext] Session verified for:", response.data.user.email);
+            
+            if (!storedRole) {
+              storedRole = normalizeRole(response.data.user.role);
+            }
+          } catch (verifyError: any) {
+            console.warn("[AuthContext] Token verification failed. Clearing session.", verifyError.message);
+            await SecureStore.deleteItemAsync(TOKEN_KEY);
+            await SecureStore.deleteItemAsync(ROLE_KEY);
+            token = null;
+            storedRole = null;
+          }
         }
       } catch (e) {
         console.log("Restoring token/role failed", e);
@@ -78,6 +96,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     bootstrapAsync();
+
+    // Listen for session expiration events from API interceptor
+    const unsubscribe = authEvents.on("onSessionExpired", () => {
+      console.log("Session expired event received. Logging out...");
+      logout();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (credentials: object) => {

@@ -5,7 +5,7 @@ declare global {
     interface Request {
       user?: {
         email: string;
-        id: string;
+        id: number;
         // Add any other fields you put in your JWT payload
       };
     }

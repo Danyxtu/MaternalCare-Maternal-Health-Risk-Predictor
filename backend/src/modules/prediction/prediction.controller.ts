@@ -1,49 +1,64 @@
-import { spawn } from "child_process";
-import path from "path";
-import os from "os";
+import axios from "axios";
+import { generateClinicalInsights } from "@/src/lib/gemini.ts";
 
-export const explainModel = (req: any, res: any) => {
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:5000";
+
+export const explainModel = async (req: any, res: any) => {
   const data = req.body?.physiological_data;
-  if (!Array.isArray(data)) {
+  
+  if (!data || (Array.isArray(data) && data.length === 0)) {
     return res
       .status(400)
-      .json({ error: "physiological_data must be an array" });
+      .json({ error: "physiological_data is required" });
   }
 
-  // Make paths absolute (recommended)
-  const pythonPath = path.join(os.homedir(), "venv", "bin", "python3");
-  const scriptPath = path.resolve(process.cwd(), "src/assets/lime_explain.py");
+  // Handle both array and object input
+  const inputData = Array.isArray(data) ? data : Object.values(data);
 
-  const python = spawn(pythonPath, [scriptPath, JSON.stringify(data)]);
+  try {
+    // Call the Flask ML Service
+    const response = await axios.post(`${ML_SERVICE_URL}/predict`, {
+      input: inputData
+    });
 
-  let stdout = "";
-  let stderr = "";
+    const { prediction, label, probability, top_features } = response.data;
 
-  python.stdout.on("data", (d) => (stdout += d.toString()));
-  python.stderr.on("data", (d) => (stderr += d.toString()));
+    // Map features for frontend
+    const features = top_features.map((f: any) => ({
+      condition: f.feature,
+      weight: f.impact,
+      impact: f.impact > 0 ? "Increased" : "Decreased"
+    }));
 
-  python.on("error", (err) => {
-    return res
-      .status(500)
-      .json({ error: "Failed to start python", details: err.message });
-  });
+    // Call Gemini for clinical insights
+    const insights = await generateClinicalInsights(
+      req.body.physiological_data,
+      label,
+      features
+    );
 
-  python.on("close", (code) => {
-    if (code !== 0) {
-      return res
-        .status(500)
-        .json({ error: "Python script failed", code, stderr });
-    }
+    return res.json({
+      predicted_class: label,
+      prediction_value: prediction,
+      probability: probability,
+      features: features,
+      possible_maternal_risks: insights.possible_maternal_risks,
+      recommendations: insights.recommendations
+    });
 
-    try {
-      return res.json(JSON.parse(stdout));
-    } catch (e: any) {
-      return res.status(500).json({
-        error: "Python did not return valid JSON",
-        stderr,
-        stdout,
-        details: e.message,
+  } catch (error: any) {
+    console.error("Prediction Error:", error.message);
+    
+    if (error.code === "ECONNREFUSED") {
+      return res.status(503).json({
+        error: "ML Service is not running",
+        details: "Please start the Flask app in ml-service/src/app.py"
       });
     }
-  });
+
+    return res.status(error.response?.status || 500).json({
+      error: "ML Service request failed",
+      details: error.response?.data?.error || error.message
+    });
+  }
 };

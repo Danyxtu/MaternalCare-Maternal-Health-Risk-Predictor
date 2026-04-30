@@ -5,7 +5,6 @@ import {
   FileText,
   Plus,
   Bell,
-  Settings,
   BrainCircuit,
 } from "lucide-react-native";
 
@@ -81,13 +80,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <BrainCircuit color={color} size={size} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
         }}
       />
     </Tabs>

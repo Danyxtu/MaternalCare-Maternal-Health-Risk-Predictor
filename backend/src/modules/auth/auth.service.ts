@@ -28,6 +28,28 @@ export class AuthService {
         middle_initial: data.middle_initial,
         password: data.password,
         role: data.role,
+        ...(data.role === "DOCTOR"
+          ? {
+              doctor: {
+                create: {
+                  first_name: data.first_name || "",
+                  last_name: data.last_name || "",
+                  middle_initial: data.middle_initial,
+                  contact: "N/A",
+                },
+              },
+            }
+          : {
+              patient: {
+                create: {
+                  first_name: data.first_name || "",
+                  last_name: data.last_name || "",
+                  middle_initial: data.middle_initial,
+                  age: 0, // Default age
+                  contact: "N/A",
+                },
+              },
+            }),
       },
     });
     return {

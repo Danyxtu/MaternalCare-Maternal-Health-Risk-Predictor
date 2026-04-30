@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useColorScheme,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -18,10 +19,13 @@ import {
   Activity,
   ChevronLeft,
   Info,
+  CheckCircle2,
 } from "lucide-react-native";
-import { useNavigation, useLocalSearchParams } from "expo-router";
+import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { getAssessedRiskStyles } from "#/src/styles/assessedRisk.styles";
+import api from "#/src/api/api";
+import StatusModal from "#/src/components/StatusModal";
 
 // --- Types ---
 interface Feature {
@@ -34,6 +38,8 @@ interface AssessmentResult {
   predicted_class: string;
   probability: number;
   features: Feature[];
+  possible_maternal_risks?: string[];
+  recommendations?: string[];
 }
 
 // --- Risk Config ---
@@ -161,12 +167,30 @@ const AssessedRiskScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getAssessedRiskStyles(colorScheme);
   const navigation = useNavigation();
+  const router = useRouter();
   const params = useLocalSearchParams();
 
-  // Parse result from route params (pass as JSON string)
+  const [isSaving, setIsSaving] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean;
+    status: "success" | "error";
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    status: "success",
+    title: "",
+    message: "",
+  });
+
+  // Parse result from route params
   let result: AssessmentResult | null = null;
+  let physiologicalData: string[] = [];
   try {
     result = params.result ? JSON.parse(params.result as string) : null;
+    physiologicalData = params.physiological_data
+      ? JSON.parse(params.physiological_data as string)
+      : [];
   } catch {
     result = null;
   }
@@ -193,11 +217,143 @@ const AssessedRiskScreen: React.FC = () => {
     ]).start();
   }, []);
 
+  const handleSaveReport = async () => {
+    if (!result || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const getParamString = (value: unknown): string => {
+        if (Array.isArray(value)) {
+          return typeof value[0] === "string" ? value[0] : "";
+        }
+        return typeof value === "string" ? value : "";
+      };
+
+      const patientName = getParamString(params.patient_name).trim();
+      const patientIdRaw = getParamString(params.patient_id).trim();
+      const patientAgeRaw = getParamString(params.patient_age).trim();
+
+      const patientId = patientIdRaw ? Number(patientIdRaw) : undefined;
+      const patientAgeFromParams = patientAgeRaw
+        ? Number(patientAgeRaw)
+        : undefined;
+
+      const ageNum = Number(physiologicalData[0]);
+      const systolicNum = Number(physiologicalData[1]);
+      const diastolicNum = Number(physiologicalData[2]);
+      const bloodSugarNum = Number(physiologicalData[3]);
+      const temperatureNum = Number(physiologicalData[4]);
+      const heartRateNum = Number(physiologicalData[5]);
+      const sleepHoursNum = Number(physiologicalData[6]);
+      const hemoglobinNum = Number(physiologicalData[7]);
+      const ironSupplementNum = Number(physiologicalData[8]);
+      const folicSupplementNum = Number(physiologicalData[9]);
+      const dietAdherenceVal = physiologicalData[10];
+
+      const vitals = [
+        ageNum,
+        systolicNum,
+        diastolicNum,
+        bloodSugarNum,
+        temperatureNum,
+        heartRateNum,
+        sleepHoursNum,
+        hemoglobinNum,
+        ironSupplementNum,
+        folicSupplementNum,
+      ];
+
+      if (vitals.some((v) => !Number.isFinite(v))) {
+        setModalConfig({
+          visible: true,
+          status: "error",
+          title: "Invalid Data",
+          message: "Missing or invalid physiological data. Please run a new assessment.",
+        });
+        return;
+      }
+
+      if (!Number.isFinite(patientId as number) && !patientName) {
+        setModalConfig({
+          visible: true,
+          status: "error",
+          title: "Missing Patient",
+          message: "Missing patient information. Please run a new assessment.",
+        });
+        return;
+      }
+
+      const safeParseInt = (val: any) => {
+        if (!val || val === "null" || val === "undefined") return undefined;
+        const parsed = parseInt(val);
+        return isFinite(parsed) ? parsed : undefined;
+      };
+
+      const payload = {
+        patientId: safeParseInt(params.patient_id),
+        patientName: (params.patient_name as string) || undefined,
+        patientAge: safeParseInt(params.patient_age) || Math.trunc(ageNum),
+        physiological_data: {
+          Age: ageNum,
+          SystolicBP: systolicNum,
+          DiastolicBP: diastolicNum,
+          BS: bloodSugarNum,
+          BodyTemp: temperatureNum,
+          HeartRate: heartRateNum,
+          sleep_hours: sleepHoursNum,
+          hemoglobin_g_dL: hemoglobinNum,
+          iron_supplement: ironSupplementNum,
+          folic_supplement: folicSupplementNum,
+          diet_adherence: dietAdherenceVal,
+        },
+        predicted_class: result.predicted_class,
+        probability: result.probability,
+        features: result.features,
+        possible_maternal_risks: result.possible_maternal_risks,
+        recommendations: result.recommendations,
+      };
+
+      await api.post("/assessments/save-report", payload);
+
+      setModalConfig({
+        visible: true,
+        status: "success",
+        title: "Report Saved",
+        message: "The patient's assessment report has been successfully saved to the database.",
+      });
+    } catch (error: any) {
+      console.error("Save Report Error:", error);
+      setModalConfig({
+        visible: true,
+        status: "error",
+        title: "Save Failed",
+        message: error.message || "We encountered an error while saving the report. Please try again.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    const isSuccess = modalConfig.status === "success";
+    setModalConfig((prev) => ({ ...prev, visible: false }));
+    if (isSuccess) {
+      router.push("/(drawerDoctor)/(tabs)/dashboard");
+    }
+  };
+
   return (
     <SafeAreaView
       style={styles.safeArea}
       edges={["top", "left", "right", "bottom"]}
     >
+      <StatusModal
+        visible={modalConfig.visible}
+        status={modalConfig.status}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={handleModalClose}
+      />
       {/* Header */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
@@ -254,24 +410,6 @@ const AssessedRiskScreen: React.FC = () => {
             {riskConfig.label}
           </Text>
 
-          {/* Probability gauge */}
-          <View style={styles.gaugeContainer}>
-            <Text style={styles.gaugeValue}>{probabilityPercent}%</Text>
-            <Text style={styles.gaugeSubtext}>Confidence Score</Text>
-          </View>
-
-          <View style={styles.probabilityBarTrack}>
-            <View
-              style={[
-                styles.probabilityBarFill,
-                {
-                  width: `${probabilityPercent}%` as any,
-                  backgroundColor: riskConfig.color,
-                },
-              ]}
-            />
-          </View>
-
           <View style={[styles.infoBox, { borderLeftColor: riskConfig.color }]}>
             <Info color={riskConfig.color} size={14} style={{ marginTop: 2 }} />
             <Text style={styles.infoBoxText}>{riskConfig.description}</Text>
@@ -302,6 +440,52 @@ const AssessedRiskScreen: React.FC = () => {
             />
           ))}
         </View>
+
+        {/* ── Possible Maternal Risks Card ── */}
+        {result?.possible_maternal_risks && result.possible_maternal_risks.length > 0 && (
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <AlertTriangle color="#E11D48" size={20} style={styles.sectionIcon} />
+              <Text style={styles.sectionTitle}>Possible Maternal Risks</Text>
+            </View>
+            <Text style={styles.sectionSubtitle}>
+              Potential health complications identified by AI analysis based on the physiological patterns.
+            </Text>
+            <View style={styles.divider} />
+            {result.possible_maternal_risks.map((risk, index) => (
+              <View key={index} style={{ flexDirection: "row", marginBottom: 8, alignItems: "flex-start" }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#E11D48", marginTop: 8, marginRight: 10 }} />
+                <Text style={{ flex: 1, color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937", fontSize: 14, lineHeight: 20 }}>
+                  {risk}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* ── Recommendations Card ── */}
+        {result?.recommendations && result.recommendations.length > 0 && (
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <CheckCircle2 color="#10B981" size={20} style={styles.sectionIcon} />
+              <Text style={styles.sectionTitle}>Medical Recommendations</Text>
+            </View>
+            <Text style={styles.sectionSubtitle}>
+              Actionable steps and clinical advice generated to mitigate identified risks.
+            </Text>
+            <View style={styles.divider} />
+            {result.recommendations.map((rec, index) => (
+              <View key={index} style={{ flexDirection: "row", marginBottom: 12, alignItems: "flex-start" }}>
+                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#D1FAE5", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: "#065F46" }}>{index + 1}</Text>
+                </View>
+                <Text style={{ flex: 1, color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937", fontSize: 14, lineHeight: 20 }}>
+                  {rec}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* ── Interpretation Guide Card ── */}
         <View style={styles.card}>
@@ -361,11 +545,20 @@ const AssessedRiskScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => navigation.goBack()}
+            disabled={isSaving}
           >
             <Text style={styles.primaryButtonText}>New Assessment</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Save Report</Text>
+          <TouchableOpacity
+            style={[styles.secondaryButton, isSaving && { opacity: 0.7 }]}
+            onPress={handleSaveReport}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#10B981" size="small" />
+            ) : (
+              <Text style={styles.secondaryButtonText}>Save Report</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

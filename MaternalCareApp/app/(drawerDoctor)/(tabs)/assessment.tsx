@@ -19,6 +19,9 @@ import {
   Heart,
   Droplet,
   Thermometer,
+  Moon,
+  Pill,
+  Check,
 } from "lucide-react-native";
 import { getNewAssessmentScreenStyles } from "#/src/styles/assessment.styles";
 import { useNavigation } from "expo-router";
@@ -32,6 +35,7 @@ interface InputFieldProps {
   icon?: React.ReactNode;
   placeholder: string;
   helperText?: string;
+  errorText?: string;
   value: string;
   onChangeText: (text: string) => void;
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
@@ -46,12 +50,31 @@ interface ExistingPatient {
   risk?: string;
 }
 
+type FieldErrorKey =
+  | "patient"
+  | "firstName"
+  | "lastName"
+  | "age"
+  | "systolic"
+  | "diastolic"
+  | "bloodSugar"
+  | "temperature"
+  | "heartRate"
+  | "hemoglobin"
+  | "sleepHours"
+  | "dietAdherence"
+  | "ironSupplement"
+  | "folicSupplement";
+
+type FieldErrors = Partial<Record<FieldErrorKey, string>>;
+
 // --- Reusable Components ---
 const InputField: React.FC<InputFieldProps> = ({
   label,
   icon,
   placeholder,
   helperText,
+  errorText,
   value,
   onChangeText,
   keyboardType = "default",
@@ -68,8 +91,9 @@ const InputField: React.FC<InputFieldProps> = ({
           {label} {isRequired && <Text style={styles.requiredAsterisk}>*</Text>}
         </Text>
       </View>
+      {!!errorText && <Text style={styles.errorText}>{errorText}</Text>}
       <TextInput
-        style={styles.textInput}
+        style={[styles.textInput, !!errorText && styles.errorInput]}
         placeholder={placeholder}
         placeholderTextColor="#94A3B8"
         value={value}
@@ -87,16 +111,90 @@ const NewAssessmentScreen: React.FC = () => {
   const styles = getNewAssessmentScreenStyles(colorScheme);
   const navigation = useNavigation();
   const router = useRouter();
+
+  // Stepper State
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const STEPS = [
+    { id: 1, title: "Patient Info" },
+    { id: 2, title: "Physiological" },
+    { id: 3, title: "Lifestyle" },
+    { id: 4, title: "Supplements" },
+  ];
+
+  const getStepErrors = (step: number): FieldErrors => {
+    const errors: FieldErrors = {};
+    switch (step) {
+      case 1:
+        if (patientType === "existing") {
+          if (
+            selectedPatientName.trim() === "" &&
+            existingSearch.trim() === ""
+          ) {
+            errors.patient = "Required";
+          }
+        } else {
+          if (firstName.trim() === "") errors.firstName = "Required";
+          if (lastName.trim() === "") errors.lastName = "Required";
+        }
+
+        if (age.trim() === "") errors.age = "Required";
+        return errors;
+      case 2:
+        if (systolic.trim() === "") errors.systolic = "Required";
+        if (diastolic.trim() === "") errors.diastolic = "Required";
+        if (bloodSugar.trim() === "") errors.bloodSugar = "Required";
+        if (temperature.trim() === "") errors.temperature = "Required";
+        if (heartRate.trim() === "") errors.heartRate = "Required";
+        if (hemoglobin.trim() === "") errors.hemoglobin = "Required";
+        return errors;
+      case 3:
+        if (sleepHours.trim() === "") errors.sleepHours = "Required";
+        if (dietAdherence.trim() === "") errors.dietAdherence = "Required";
+        return errors;
+      case 4:
+        if (ironSupplement.trim() === "") errors.ironSupplement = "Required";
+        if (folicSupplement.trim() === "") errors.folicSupplement = "Required";
+        return errors;
+      default:
+        return errors;
+    }
+  };
+
+  const handleNext = () => {
+    const errors = getStepErrors(currentStep);
+    if (Object.keys(errors).length === 0) {
+      setFieldErrors({});
+      setCompletedSteps((prev) =>
+        prev.includes(currentStep) ? prev : [...prev, currentStep],
+      );
+      setCurrentStep((prev) => prev + 1);
+    } else {
+      setFieldErrors(errors);
+    }
+  };
+
+  const handleStepClick = (stepId: number) => {
+    if (stepId < currentStep || completedSteps.includes(stepId - 1)) {
+      setFieldErrors({});
+      setCurrentStep(stepId);
+    }
+  };
+
   const patientOptions: Array<{ key: "existing" | "new"; label: string }> = [
     { key: "existing", label: "Existing Patient" },
     { key: "new", label: "New Patient" },
   ];
+
   // Form State
   const [patientType, setPatientType] = useState<"existing" | "new">(
     "existing",
   );
   const [existingSearch, setExistingSearch] = useState("");
   const [selectedPatientName, setSelectedPatientName] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    null,
+  );
   const [existingPatients, setExistingPatients] = useState<ExistingPatient[]>(
     [],
   );
@@ -110,7 +208,22 @@ const NewAssessmentScreen: React.FC = () => {
   const [bloodSugar, setBloodSugar] = useState("");
   const [temperature, setTemperature] = useState("");
   const [heartRate, setHeartRate] = useState("");
+  const [hemoglobin, setHemoglobin] = useState("");
+  const [sleepHours, setSleepHours] = useState("");
+  const [dietAdherence, setDietAdherence] = useState("Fair");
+  const [ironSupplement, setIronSupplement] = useState("0");
+  const [folicSupplement, setFolicSupplement] = useState("0");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const clearFieldError = (key: FieldErrorKey) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const fetchExistingPatients = async () => {
     try {
@@ -162,6 +275,7 @@ const NewAssessmentScreen: React.FC = () => {
 
   const handlePatientTypeChange = (type: "existing" | "new") => {
     setPatientType(type);
+    setFieldErrors({});
     if (type === "existing") {
       setFirstName("");
       setLastName("");
@@ -169,6 +283,7 @@ const NewAssessmentScreen: React.FC = () => {
     } else {
       setExistingSearch("");
       setSelectedPatientName("");
+      setSelectedPatientId(null);
     }
   };
 
@@ -179,23 +294,42 @@ const NewAssessmentScreen: React.FC = () => {
         patientType === "existing"
           ? selectedPatientName || existingSearch.trim()
           : formatNewPatientName();
+
+      const physiologicalData = [
+        parseFloat(age) || 0,           // 0: Age
+        parseFloat(systolic) || 0,      // 1: SystolicBP
+        parseFloat(diastolic) || 0,     // 2: DiastolicBP
+        parseFloat(bloodSugar) || 0,    // 3: BS
+        parseFloat(temperature) || 0,   // 4: BodyTemp
+        parseFloat(heartRate) || 0,     // 5: HeartRate
+        parseFloat(sleepHours) || 0,    // 6: sleep_hours
+        parseFloat(hemoglobin) || 0,    // 7: hemoglobin_g_dL
+        parseInt(ironSupplement) || 0,  // 8: iron_supplement
+        parseInt(folicSupplement) || 0, // 9: folic_supplement
+        dietAdherence,                  // 10: diet_adherence (String)
+      ];
+
       const response = await api.post("/model/explain", {
-        physiological_data: [
-          age,
-          systolic,
-          diastolic,
-          bloodSugar,
-          temperature,
-          heartRate,
-        ],
+        physiological_data: physiologicalData,
         patient_name: patientName,
         patient_type: patientType,
       });
+
+      const routeParams: Record<string, string> = {
+        result: JSON.stringify(response.data),
+        patient_name: patientName,
+        patient_type: patientType,
+        patient_age: age,
+        physiological_data: JSON.stringify(physiologicalData),
+      };
+      if (patientType === "existing" && selectedPatientId) {
+        routeParams.patient_id = String(selectedPatientId);
+      }
       router.push({
         pathname: "/assessedRisk",
-        params: { result: JSON.stringify(response.data) },
+        params: routeParams,
       });
-      console.log("Prediction Response:", response);
+      console.log("Prediction Response:", response.data);
     } catch (error) {
       console.error("API Error:", error);
     } finally {
@@ -203,48 +337,67 @@ const NewAssessmentScreen: React.FC = () => {
     }
   };
 
-  return (
-    <SafeAreaView
-      style={styles.safeArea}
-      edges={["top", "left", "right", "bottom"]}
-    >
-      {/* Header Section - Fixed at top */}
-      <View style={styles.headerContainer}>
-        <TouchableOpacity
-          style={styles.headerIcon}
-          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-        >
-          <Layout
-            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
-            size={24}
-          />
-        </TouchableOpacity>
-        <View style={[styles.headerTextContainer, { marginLeft: 12 }]}>
-          <Text style={styles.headerTitle}>Physiological Input Module</Text>
-          <Text style={styles.headerSubtitle}>
-            Enter patient vitals for risk assessment
-          </Text>
-        </View>
-      </View>
+  const renderStepIndicator = () => (
+    <View style={styles.stepperContainer}>
+      {STEPS.map((step, index) => {
+        const isActive = currentStep === step.id;
+        const isCompleted = completedSteps.includes(step.id) && !isActive;
+        return (
+          <View key={step.id} style={styles.stepItem}>
+            <TouchableOpacity
+              onPress={() => handleStepClick(step.id)}
+              disabled={loading}
+              activeOpacity={0.7}
+              style={[
+                styles.stepCircle,
+                isActive && styles.stepCircleActive,
+                isCompleted && styles.stepCircleCompleted,
+              ]}
+            >
+              {isCompleted ? (
+                <Check color="#FFFFFF" size={16} />
+              ) : (
+                <Text
+                  style={[
+                    styles.stepText,
+                    isActive && styles.stepTextActive,
+                    isCompleted && { color: "#FFFFFF" },
+                    { marginBottom: 0 },
+                  ]}
+                >
+                  {step.id}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <Text
+              style={[
+                styles.stepText,
+                isActive && styles.stepTextActive,
+                { marginTop: 4 },
+              ]}
+            >
+              {step.title}
+            </Text>
+            {index < STEPS.length - 1 && (
+              <View
+                style={[
+                  styles.stepLine,
+                  completedSteps.includes(step.id) && styles.stepLineCompleted,
+                  currentStep === step.id && styles.stepLineActive,
+                ]}
+              />
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
 
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#10B981"]}
-              tintColor={colorScheme === "dark" ? "#ECEDEE" : "#10B981"}
-            />
-          }
-        >
-          {/* Form Card */}
-          <View style={styles.card}>
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <View>
             <View style={styles.selectorContainer}>
               {patientOptions.map((option) => {
                 const selected = patientType === option.key;
@@ -271,7 +424,6 @@ const NewAssessmentScreen: React.FC = () => {
               })}
             </View>
 
-            {/* --- Patient Information Section --- */}
             <View style={styles.sectionHeader}>
               <User color="#E11D48" size={20} style={styles.sectionIcon} />
               <Text style={styles.sectionTitle}>Patient Information</Text>
@@ -283,9 +435,12 @@ const NewAssessmentScreen: React.FC = () => {
                   label="Patient (Initials or Name)"
                   placeholder="Type initials e.g., AG"
                   value={existingSearch}
+                  errorText={fieldErrors.patient}
                   onChangeText={(text) => {
                     setExistingSearch(text);
                     setSelectedPatientName(text);
+                    setSelectedPatientId(null);
+                    if (text.trim() !== "") clearFieldError("patient");
                   }}
                 />
                 <View style={styles.suggestionContainer}>
@@ -312,6 +467,8 @@ const NewAssessmentScreen: React.FC = () => {
                         onPress={() => {
                           setSelectedPatientName(formattedName);
                           setExistingSearch(formattedName);
+                          setSelectedPatientId(patient.id);
+                          clearFieldError("patient");
                         }}
                         activeOpacity={0.8}
                       >
@@ -340,13 +497,21 @@ const NewAssessmentScreen: React.FC = () => {
                   label="First Name"
                   placeholder="Enter first name"
                   value={firstName}
-                  onChangeText={setFirstName}
+                  errorText={fieldErrors.firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (text.trim() !== "") clearFieldError("firstName");
+                  }}
                 />
                 <InputField
                   label="Last Name"
                   placeholder="Enter last name"
                   value={lastName}
-                  onChangeText={setLastName}
+                  errorText={fieldErrors.lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    if (text.trim() !== "") clearFieldError("lastName");
+                  }}
                 />
                 <InputField
                   label="Middle Initial"
@@ -354,6 +519,7 @@ const NewAssessmentScreen: React.FC = () => {
                   value={middleInitial}
                   onChangeText={(text) => setMiddleInitial(text.slice(0, 1))}
                   helperText="Single letter only"
+                  isRequired={false}
                 />
               </>
             )}
@@ -363,16 +529,21 @@ const NewAssessmentScreen: React.FC = () => {
               icon={<Calendar color="#475569" size={16} />}
               placeholder="Enter age"
               value={age}
-              onChangeText={setAge}
+              errorText={fieldErrors.age}
+              onChangeText={(text) => {
+                setAge(text);
+                if (text.trim() !== "") clearFieldError("age");
+              }}
               keyboardType="numeric"
             />
-
-            <View style={styles.divider} />
-
-            {/* --- Vital Signs Section --- */}
+          </View>
+        );
+      case 2:
+        return (
+          <View>
             <View style={styles.sectionHeader}>
               <Activity color="#E11D48" size={20} style={styles.sectionIcon} />
-              <Text style={styles.sectionTitle}>Vital Signs</Text>
+              <Text style={styles.sectionTitle}>Physiological Data</Text>
             </View>
 
             <InputField
@@ -381,7 +552,11 @@ const NewAssessmentScreen: React.FC = () => {
               placeholder="e.g., 120"
               helperText="Normal: 90-120 mmHg"
               value={systolic}
-              onChangeText={setSystolic}
+              errorText={fieldErrors.systolic}
+              onChangeText={(text) => {
+                setSystolic(text);
+                if (text.trim() !== "") clearFieldError("systolic");
+              }}
               keyboardType="numeric"
             />
 
@@ -391,17 +566,25 @@ const NewAssessmentScreen: React.FC = () => {
               placeholder="e.g., 80"
               helperText="Normal: 60-80 mmHg"
               value={diastolic}
-              onChangeText={setDiastolic}
+              errorText={fieldErrors.diastolic}
+              onChangeText={(text) => {
+                setDiastolic(text);
+                if (text.trim() !== "") clearFieldError("diastolic");
+              }}
               keyboardType="numeric"
             />
 
             <InputField
               label="Blood Sugar Level"
               icon={<Droplet color="#3B82F6" size={16} />}
-              placeholder="e.g., 95"
-              helperText="Normal: 70-100 mg/dL (fasting)"
+              placeholder="e.g., 5.5"
+              helperText="Normal: 3.9-5.6 mmol/L (fasting)"
               value={bloodSugar}
-              onChangeText={setBloodSugar}
+              errorText={fieldErrors.bloodSugar}
+              onChangeText={(text) => {
+                setBloodSugar(text);
+                if (text.trim() !== "") clearFieldError("bloodSugar");
+              }}
               keyboardType="numeric"
             />
 
@@ -411,7 +594,11 @@ const NewAssessmentScreen: React.FC = () => {
               placeholder="e.g., 37.0"
               helperText="Normal: 36.5-37.5°C"
               value={temperature}
-              onChangeText={setTemperature}
+              errorText={fieldErrors.temperature}
+              onChangeText={(text) => {
+                setTemperature(text);
+                if (text.trim() !== "") clearFieldError("temperature");
+              }}
               keyboardType="numeric"
             />
 
@@ -421,39 +608,276 @@ const NewAssessmentScreen: React.FC = () => {
               placeholder="e.g., 75"
               helperText="Normal: 60-100 bpm"
               value={heartRate}
-              onChangeText={setHeartRate}
+              errorText={fieldErrors.heartRate}
+              onChangeText={(text) => {
+                setHeartRate(text);
+                if (text.trim() !== "") clearFieldError("heartRate");
+              }}
+              keyboardType="numeric"
+            />
+
+            <InputField
+              label="Hemoglobin (g/dL)"
+              icon={<Droplet color="#E11D48" size={16} />}
+              placeholder="e.g., 12.0"
+              value={hemoglobin}
+              errorText={fieldErrors.hemoglobin}
+              onChangeText={(text) => {
+                setHemoglobin(text);
+                if (text.trim() !== "") clearFieldError("hemoglobin");
+              }}
               keyboardType="numeric"
             />
           </View>
+        );
+      case 3:
+        return (
+          <View>
+            <View style={styles.sectionHeader}>
+              <Activity color="#E11D48" size={20} style={styles.sectionIcon} />
+              <Text style={styles.sectionTitle}>
+                Lifestyle & Behavioral Data
+              </Text>
+            </View>
+
+            <InputField
+              label="Sleep Hours"
+              icon={<Moon color="#3B82F6" size={16} />}
+              placeholder="e.g., 8"
+              value={sleepHours}
+              errorText={fieldErrors.sleepHours}
+              onChangeText={(text) => {
+                setSleepHours(text);
+                if (text.trim() !== "") clearFieldError("sleepHours");
+              }}
+              keyboardType="numeric"
+            />
+
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelIcon}>
+                  <Activity color="#475569" size={16} />
+                </View>
+                <Text style={styles.label}>Diet Adherence</Text>
+              </View>
+              {!!fieldErrors.dietAdherence && (
+                <Text style={styles.errorText}>
+                  {fieldErrors.dietAdherence}
+                </Text>
+              )}
+              <View style={styles.selectorContainer}>
+                {["Poor", "Fair", "Good"].map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.selectorOption,
+                      dietAdherence === option && styles.selectorOptionActive,
+                    ]}
+                    onPress={() => {
+                      setDietAdherence(option);
+                      if (option.trim() !== "")
+                        clearFieldError("dietAdherence");
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        dietAdherence === option &&
+                          styles.selectorOptionTextActive,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+      case 4:
+        return (
+          <View>
+            <View style={styles.sectionHeader}>
+              <Pill color="#E11D48" size={20} style={styles.sectionIcon} />
+              <Text style={styles.sectionTitle}>
+                Supplements & Interventions
+              </Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelIcon}>
+                  <Pill color="#475569" size={16} />
+                </View>
+                <Text style={styles.label}>Iron Supplement</Text>
+              </View>
+              <View style={styles.selectorContainer}>
+                {[
+                  { label: "No", val: "0" },
+                  { label: "Yes", val: "1" },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.val}
+                    style={[
+                      styles.selectorOption,
+                      ironSupplement === option.val &&
+                        styles.selectorOptionActive,
+                    ]}
+                    onPress={() => setIronSupplement(option.val)}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        ironSupplement === option.val &&
+                          styles.selectorOptionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelIcon}>
+                  <Pill color="#475569" size={16} />
+                </View>
+                <Text style={styles.label}>Folic Acid Supplement</Text>
+              </View>
+              <View style={styles.selectorContainer}>
+                {[
+                  { label: "No", val: "0" },
+                  { label: "Yes", val: "1" },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.val}
+                    style={[
+                      styles.selectorOption,
+                      folicSupplement === option.val &&
+                        styles.selectorOptionActive,
+                    ]}
+                    onPress={() => setFolicSupplement(option.val)}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        folicSupplement === option.val &&
+                          styles.selectorOptionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
+      {/* Header Section - Fixed at top */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.headerIcon}
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+        >
+          <Layout
+            color={colorScheme === "dark" ? "#ECEDEE" : "#11181C"}
+            size={24}
+          />
+        </TouchableOpacity>
+        <View style={[styles.headerTextContainer, { marginLeft: 12 }]}>
+          <Text style={styles.headerTitle}>Physiological Input Module</Text>
+          <Text style={styles.headerSubtitle}>
+            Complete {STEPS.length} steps for risk assessment
+          </Text>
+        </View>
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#10B981"]}
+              tintColor={colorScheme === "dark" ? "#ECEDEE" : "#10B981"}
+            />
+          }
+        >
+          {renderStepIndicator()}
+
+          {/* Form Card */}
+          <View style={styles.card}>{renderStepContent()}</View>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              onPress={loading ? undefined : handleSubmit}
-              style={[
-                styles.primaryButton,
-                loading && { backgroundColor: "#CBD5E1" }, // Tailwind slate-300
-              ]}
-              disabled={loading}
-              activeOpacity={loading ? 1 : 0.7}
-            >
-              <Text
-                style={[
-                  styles.primaryButtonText,
-                  loading && { color: "#64748B" }, // Tailwind slate-500
-                ]}
+            {currentStep > 1 ? (
+              <TouchableOpacity
+                onPress={() => {
+                  setFieldErrors({});
+                  setCurrentStep((prev) => prev - 1);
+                }}
+                style={styles.secondaryButton}
+                disabled={loading}
               >
-                {loading ? "Calculating..." : "Calculate Risk Assessment"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                router.push("/(drawerDoctor)/(tabs)/patientRecords")
-              }
-              style={styles.secondaryButton}
-            >
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </TouchableOpacity>
+                <Text style={styles.secondaryButtonText}>Previous</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() =>
+                  router.push("/(drawerDoctor)/(tabs)/patientRecords")
+                }
+                style={styles.secondaryButton}
+                disabled={loading}
+              >
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+
+            {currentStep < 4 ? (
+              <TouchableOpacity
+                onPress={handleNext}
+                style={styles.primaryButton}
+                disabled={loading}
+              >
+                <Text style={styles.primaryButtonText}>Next</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={loading ? undefined : handleSubmit}
+                style={[
+                  styles.primaryButton,
+                  loading && { backgroundColor: "#CBD5E1" },
+                ]}
+                disabled={loading}
+                activeOpacity={loading ? 1 : 0.7}
+              >
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    loading && { color: "#64748B" },
+                  ]}
+                >
+                  {loading ? "Calculating..." : "Calculate Risk Assessment"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

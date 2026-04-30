@@ -1,10 +1,13 @@
 import { prisma } from "@/src/lib/prisma.ts";
 
 export class AlertService {
-  async getAlerts() {
+  async getAlerts(doctorId: number) {
     const alerts = await prisma.alert.findMany({
       where: {
-        status: 'OPEN'
+        status: 'OPEN',
+        assessment: {
+          doctorId: doctorId
+        }
       },
       include: {
         patient: true,
@@ -21,16 +24,21 @@ export class AlertService {
       statusText: alert.severity, // CRITICAL, WARNING, INFO
       age: alert.patient.age,
       bp: (alert.assessment.physiological_data as any)?.BP || "N/A",
-      bloodSugar: (alert.assessment.physiological_data as any)?.BloodSugar || 0,
+      bloodSugar: (alert.assessment.physiological_data as any)?.BS || (alert.assessment.physiological_data as any)?.BloodSugar || 0,
       heartRate: (alert.assessment.physiological_data as any)?.HeartRate || 0,
       timeAgo: alert.createdAt.toISOString(),
       severity: alert.severity
     }));
   }
 
-  async getAlertStats() {
+  async getAlertStats(doctorId: number) {
     const alerts = await prisma.alert.findMany({
-      where: { status: 'OPEN' }
+      where: { 
+        status: 'OPEN',
+        assessment: {
+          doctorId: doctorId
+        }
+      }
     });
 
     return {

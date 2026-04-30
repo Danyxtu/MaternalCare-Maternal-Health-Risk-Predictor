@@ -1,11 +1,19 @@
 import type { Request, Response } from "express";
 import { PatientService } from "./patient.service.ts";
+import { prisma } from "@/src/lib/prisma.ts";
 
 const patientService = new PatientService();
 
 export const getPatients = async (req: Request, res: Response) => {
   try {
-    const patients = await patientService.getPatientSummaries();
+    const userId = Number((req.user as any).id);
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    
+    if (!doctor) {
+      return res.status(403).json({ message: "Only doctors can view patients" });
+    }
+
+    const patients = await patientService.getPatientSummaries(doctor.id);
     res.status(200).json({
       message: "Patients retrieved successfully",
       data: patients,

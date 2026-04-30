@@ -1,14 +1,9 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import * as assessmentController from "./assessment.controller.ts";
+import requireAuth from "@/src/middleware/auth.ts";
 
 const router = Router();
 
-// Skeleton endpoint for assessment processing
-router.post("/assess", (req: Request, res: Response) => {
-  console.log("this is assess route");
-  res
-    .status(501)
-    .json({ message: "Assessment processing not implemented yet" });
-});
+router.post("/save-report", requireAuth, assessmentController.saveAssessment);
 
 export default router;

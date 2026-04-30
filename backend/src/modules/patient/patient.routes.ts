@@ -1,8 +1,11 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { getPatients, getPatientById } from "./patient.controller.ts";
+import requireAuth from "@/src/middleware/auth.ts";
 
 const router = Router();
+
+router.use(requireAuth);
 
 router.get("/", getPatients);
 

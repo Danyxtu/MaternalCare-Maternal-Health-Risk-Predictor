@@ -202,5 +202,76 @@ export const getNewAssessmentScreenStyles = (theme: Theme) => {
       fontSize: 15,
       fontWeight: "500",
     },
+    stepperContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginHorizontal: 20,
+      marginBottom: 10,
+    },
+    stepItem: {
+      flex: 1,
+      alignItems: "center",
+    },
+    stepCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme === "dark" ? "#334155" : "#E2E8F0",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+      zIndex: 2,
+    },
+    stepCircleActiveOuter: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: "#E11D48",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "absolute",
+      top: -4,
+      zIndex: 1,
+    },
+    stepCircleActive: {
+      backgroundColor: "#E11D48",
+    },
+    stepCircleCompleted: {
+      backgroundColor: "#10B981",
+    },
+    errorText: {
+      fontSize: 12,
+      color: "#E11D48",
+      marginTop: 4,
+    },
+    errorInput: {
+      borderColor: "#E11D48",
+    },
+    stepText: {
+      fontSize: 10,
+      color: colors.tabIconDefault,
+      textAlign: "center",
+    },
+    stepTextActive: {
+      color: "#E11D48",
+      fontWeight: "700",
+    },
+    stepLine: {
+      position: "absolute",
+      top: 15,
+      left: "50%",
+      right: "-50%",
+      height: 2,
+      backgroundColor: theme === "dark" ? "#334155" : "#E2E8F0",
+      zIndex: 0,
+    },
+    stepLineCompleted: {
+      backgroundColor: "#10B981",
+    },
+    stepLineActive: {
+      backgroundColor: "#E11D48",
+    },
   });
 };

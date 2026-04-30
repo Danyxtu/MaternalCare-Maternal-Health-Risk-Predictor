@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import { authEvents } from "../utils/eventEmitter";
 
 const BASE_URL = (process.env.EXPO_PUBLIC_BASE_URL ? process.env.EXPO_PUBLIC_BASE_URL + ":3000" : "http://localhost:3000") + "/api";
 
@@ -23,9 +24,20 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message =
-      error.response?.data?.message || error.message || "Something went wrong";
-    console.error("[API Error]", message);
+    const data = error.response?.data;
+    const message = data?.message || data?.error || error.message || "Something went wrong";
+    
+    if (error.response?.status === 401) {
+      console.warn("[API] Session expired or unauthorized. Triggering logout...");
+      authEvents.emit("onSessionExpired");
+    }
+
+    console.error("[API Error]", {
+      message,
+      status: error.response?.status,
+      data: data,
+    });
+    
     return Promise.reject(new Error(message));
   },
 );

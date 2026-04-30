@@ -1,10 +1,20 @@
 import { prisma } from "@/src/lib/prisma.ts";
 
 export class PatientService {
-  async getPatientSummaries() {
+  async getPatientSummaries(doctorId: number) {
     const patients = await prisma.patient.findMany({
+      where: {
+        assessments: {
+          some: {
+            doctorId: doctorId
+          }
+        }
+      },
       include: {
         assessments: {
+          where: {
+            doctorId: doctorId
+          },
           orderBy: {
             createdAt: 'desc'
           },
@@ -67,11 +77,13 @@ export class PatientService {
           date: a.createdAt.toISOString(),
           systolic: physData.SystolicBP || 0,
           diastolic: physData.DiastolicBP || 0,
-          bloodSugar: physData.BloodSugar || 0,
+          bloodSugar: physData.BS || physData.BloodSugar || 0,
           heartRate: physData.HeartRate || 0,
-          bodyTemp: physData.BodyTemperature || 37.0,
+          bodyTemp: physData.BodyTemp || physData.BodyTemperature || 37.0,
           riskLevel: a.risk_label,
           riskScore: a.risk_score,
+          possible_maternal_risks: a.possible_maternal_risks,
+          recommendations: a.recommendations,
           note: a.notes
         };
       })

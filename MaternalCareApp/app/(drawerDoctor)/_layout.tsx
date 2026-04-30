@@ -49,6 +49,14 @@ export default function DrawerLayout() {
           }}
         />
 
+        <Drawer.Screen
+          name="settings"
+          options={{
+            title: "Settings",
+            drawerLabel: "Settings",
+          }}
+        />
+
         {/* Hidden Stack Screens */}
         <Drawer.Screen
           name="alertDetails"
