@@ -46,6 +46,21 @@ model Patient {
   assessments Assessment[]
   alerts      Alert[]
   notifications Notification[]
+  wellnessChecks WellnessCheck[]
+}
+
+model WellnessCheck {
+  id                 Int      @id @default(autoincrement())
+  patient            Patient  @relation(fields: [patientId], references: [id])
+  patientId          Int
+  sleep_hours        Float
+  water_intake       Float?
+  diet_quality       String?
+  stress_level       String?
+  supplements_taken  Boolean?
+  mood               String?
+  tips               Json?
+  createdAt          DateTime @default(now())
 }
 
 model Doctor {

@@ -89,4 +89,57 @@ export class PatientService {
       })
     };
   }
+
+  async getPatientPersonalDashboard(patientId: number) {
+    const assessment = await prisma.assessment.findFirst({
+      where: { patientId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        doctor: true,
+      },
+    });
+
+    if (!assessment) return null;
+
+    const physData = assessment.physiological_data as any;
+    return {
+      id: assessment.id,
+      date: assessment.createdAt,
+      risk_label: assessment.risk_label,
+      risk_score: assessment.risk_score,
+      vitals: {
+        systolic: physData.SystolicBP,
+        diastolic: physData.DiastolicBP,
+        bloodSugar: physData.BS,
+        heartRate: physData.HeartRate,
+        bodyTemp: physData.BodyTemp,
+      },
+      doctor: assessment.doctor
+        ? {
+            id: assessment.doctor.id,
+            name: `Dr. ${assessment.doctor.first_name} ${assessment.doctor.last_name}`,
+          }
+        : null,
+      recommendations: assessment.recommendations,
+    };
+  }
+
+  async getPatientDoctors(patientId: number) {
+    const assessments = await prisma.assessment.findMany({
+      where: { patientId },
+      include: {
+        doctor: true,
+      },
+      distinct: ["doctorId"],
+    });
+
+    return assessments
+      .filter((a) => a.doctor !== null)
+      .map((a) => ({
+        id: a.doctor!.id,
+        name: `Dr. ${a.doctor!.first_name} ${a.doctor!.last_name}`,
+        specialty: "Maternal Health Specialist", // Placeholder
+        contact: a.doctor!.contact,
+      }));
+  }
 }

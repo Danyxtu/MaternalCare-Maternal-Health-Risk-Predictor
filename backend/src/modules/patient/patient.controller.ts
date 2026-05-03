@@ -43,3 +43,39 @@ export const getPatientById = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getMeDashboard = async (req: Request, res: Response) => {
+  try {
+    const patientId = (req.user as any).patientId;
+    if (!patientId) {
+      return res.status(403).json({ message: "Patient record not found" });
+    }
+
+    const dashboard = await patientService.getPatientPersonalDashboard(patientId);
+    res.status(200).json({
+      message: "Dashboard data retrieved successfully",
+      data: dashboard,
+    });
+  } catch (error: any) {
+    console.error("[Patient Controller Error]", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMeDoctors = async (req: Request, res: Response) => {
+  try {
+    const patientId = (req.user as any).patientId;
+    if (!patientId) {
+      return res.status(403).json({ message: "Patient record not found" });
+    }
+
+    const doctors = await patientService.getPatientDoctors(patientId);
+    res.status(200).json({
+      message: "Doctors retrieved successfully",
+      data: doctors,
+    });
+  } catch (error: any) {
+    console.error("[Patient Controller Error]", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

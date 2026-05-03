@@ -30,15 +30,17 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.warn("[API] Session expired or unauthorized. Triggering logout...");
       authEvents.emit("onSessionExpired");
+    } else {
+      console.error("[API Error]", {
+        message,
+        status: error.response?.status,
+        data: data,
+      });
     }
-
-    console.error("[API Error]", {
-      message,
-      status: error.response?.status,
-      data: data,
-    });
     
-    return Promise.reject(new Error(message));
+    const errorWithStatus = new Error(message) as any;
+    errorWithStatus.status = error.response?.status;
+    return Promise.reject(errorWithStatus);
   },
 );
 

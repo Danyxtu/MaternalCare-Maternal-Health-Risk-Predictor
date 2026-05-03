@@ -45,8 +45,10 @@ const PatientRecordsScreen: React.FC = () => {
       if (showLoader) setIsLoading(true);
       const response = await get("/patients");
       setPatients(response.data.data);
-    } catch (error) {
-      console.error("Failed to fetch patients:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("Failed to fetch patients:", error);
+      }
     } finally {
       if (showLoader) setIsLoading(false);
     }

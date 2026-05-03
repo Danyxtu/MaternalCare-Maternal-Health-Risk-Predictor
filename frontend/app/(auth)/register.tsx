@@ -27,6 +27,7 @@ const RegistrationScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<"DOCTOR" | "PATIENT">("PATIENT");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,10 +53,10 @@ const RegistrationScreen: React.FC = () => {
       const payload = {
         email,
         password,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-        middleInitial: middleInitial || undefined,
-        role: "DOCTOR",
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
+        middle_initial: middleInitial || undefined,
+        role: role,
       };
 
       await register(payload);
@@ -93,6 +94,40 @@ const RegistrationScreen: React.FC = () => {
 
           {/* Form Section */}
           <View style={styles.formContainer}>
+            {/* Role Selection */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>I am a...</Text>
+              <View style={{ flexDirection: "row", gap: 12, marginTop: 8, marginBottom: 12 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    backgroundColor: role === "PATIENT" ? "#E11D48" : (colorScheme === 'dark' ? '#1E293B' : '#F1F5F9'),
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: role === "PATIENT" ? "#E11D48" : (colorScheme === 'dark' ? '#334155' : '#E2E8F0'),
+                  }}
+                  onPress={() => setRole("PATIENT")}
+                >
+                  <Text style={{ color: role === "PATIENT" ? "#FFFFFF" : "#64748B", fontWeight: "600" }}>Patient</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    backgroundColor: role === "DOCTOR" ? "#E11D48" : (colorScheme === 'dark' ? '#1E293B' : '#F1F5F9'),
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: role === "DOCTOR" ? "#E11D48" : (colorScheme === 'dark' ? '#334155' : '#E2E8F0'),
+                  }}
+                  onPress={() => setRole("DOCTOR")}
+                >
+                  <Text style={{ color: role === "DOCTOR" ? "#FFFFFF" : "#64748B", fontWeight: "600" }}>Doctor</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             {/* Full Name Input */}
             <View style={styles.inputWrapper}>
               <Text style={styles.inputLabel}>First Name (optional)</Text>

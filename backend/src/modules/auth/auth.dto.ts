@@ -14,6 +14,8 @@ export interface RegisterResponse {
   last_name: string | null;
   middle_initial: string | null;
   email: string;
+  patientId?: number;
+  doctorId?: number;
 }
 
 export interface LoginInput {
@@ -29,4 +31,6 @@ export interface LoginResponse {
   last_name: string | null;
   middle_initial: string | null;
   email: string;
+  patientId?: number;
+  doctorId?: number;
 }

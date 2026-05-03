@@ -226,8 +226,10 @@ const AlertSystemScreen: React.FC = () => {
       ]);
       setAlerts(alertsRes.data.data);
       setStats(statsRes.data.data);
-    } catch (error) {
-      console.error("Failed to fetch alerts data:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("Failed to fetch alerts data:", error);
+      }
     }
   };
 

@@ -98,8 +98,10 @@ const MyProfileScreen: React.FC = () => {
         throw new Error("Profile not found");
       }
       setUser(fetchedUser);
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("Failed to fetch profile:", error);
+      }
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to fetch profile",
       );

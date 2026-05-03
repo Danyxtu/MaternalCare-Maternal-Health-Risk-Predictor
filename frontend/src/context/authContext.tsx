@@ -10,6 +10,8 @@ type UserRole = "DOCTOR" | "PATIENT";
 interface AuthContextType {
   userToken: string | null;
   role: UserRole | null;
+  patientId: number | null;
+  doctorId: number | null;
   isLoading: boolean;
   login: (credentials: object) => Promise<void>;
   logout: () => void;
@@ -22,6 +24,8 @@ interface LoginResponse {
 
 interface DecodedToken {
   role?: string;
+  patientId?: number;
+  doctorId?: number;
 }
 
 const TOKEN_KEY = "userToken";
@@ -55,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [patientId, setPatientId] = useState<number | null>(null);
+  const [doctorId, setDoctorId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Check for token on app startup (Persistence)
@@ -68,6 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         storedRole = normalizeRole(persistedRole);
 
         if (token) {
+          const decoded = jwtDecode<DecodedToken>(token);
+          setPatientId(decoded.patientId ?? null);
+          setDoctorId(decoded.doctorId ?? null);
+          
           try {
             // Verify token with backend
             console.log("[AuthContext] Verifying session with backend...");
@@ -112,23 +122,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         baseURL + "/auth/login",
         credentials,
       );
-      const { token } = response.data ?? response.data;
-      console.log("LOGIN RESPONSE:", response.data);
-      console.log("TOKEN:", token);
-      const decodedRole = decodeRoleFromToken(token);
+      const { token } = response.data;
+      const decoded = jwtDecode<DecodedToken>(token);
+      const decodedRole = normalizeRole(decoded.role);
       
-      if (decodedRole !== "DOCTOR") {
-        throw new Error("ONLY_DOCTORS_ALLOWED");
+      if (!decodedRole) {
+        throw new Error("INVALID_ROLE");
       }
-
-      const effectiveRole = decodedRole;
 
       await SecureStore.setItemAsync(TOKEN_KEY, String(token));
-      if (effectiveRole) {
-        await SecureStore.setItemAsync(ROLE_KEY, String(effectiveRole));
-      }
+      await SecureStore.setItemAsync(ROLE_KEY, String(decodedRole));
+      
       setUserToken(token);
-      setRole(effectiveRole);
+      setRole(decodedRole);
+      setPatientId(decoded.patientId ?? null);
+      setDoctorId(decoded.doctorId ?? null);
     } catch (error) {
       console.error("Login Error:", error);
       throw error;
@@ -140,10 +148,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await SecureStore.deleteItemAsync(ROLE_KEY);
     setUserToken(null);
     setRole(null);
+    setPatientId(null);
+    setDoctorId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ userToken, role, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ userToken, role, patientId, doctorId, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

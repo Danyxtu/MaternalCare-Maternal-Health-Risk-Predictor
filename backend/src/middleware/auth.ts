@@ -37,17 +37,26 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
       return res.status(401).json({ error: "Invalid token payload." });
     }
 
-    // Verify user still exists in DB
+    // Verify user still exists in DB and get their profile IDs
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, role: true }
+      include: {
+        patient: { select: { id: true } },
+        doctor: { select: { id: true } },
+      },
     });
 
     if (!user) {
       return res.status(401).json({ error: "User no longer exists. Session invalid." });
     }
 
-    req.user = { email: user.email, id: user.id };
+    req.user = { 
+      email: user.email, 
+      id: user.id,
+      patientId: user.patient?.id,
+      doctorId: user.doctor?.id,
+      role: user.role
+    };
     // 4. Move to the next function
     next();
   } catch (err) {

@@ -17,6 +17,7 @@ const RootLayout = () => {
     const inAuthGroup = segments[0] === "(auth)";
     const inWelcomePage = segments[0] === "welcomePage";
     const inDoctorGroup = segments[0] === "(drawerDoctor)";
+    const inPatientGroup = segments[0] === "(drawerPatient)";
 
     if (!userToken || !role) {
       if (!inAuthGroup && !inWelcomePage) {
@@ -26,9 +27,11 @@ const RootLayout = () => {
       return;
     }
 
-    const targetRoute = "/(drawerDoctor)/(tabs)/dashboard";
+    const targetRoute = role === "DOCTOR" 
+      ? "/(drawerDoctor)/(tabs)/dashboard" 
+      : "/(drawerPatient)/(tabs)/dashboard";
 
-    const isInCorrectGroup = inDoctorGroup;
+    const isInCorrectGroup = role === "DOCTOR" ? inDoctorGroup : inPatientGroup;
 
     if (inAuthGroup || !isInCorrectGroup) {
       router.replace(targetRoute);
@@ -48,6 +51,7 @@ const RootLayout = () => {
       <Stack.Screen name="welcomePage" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(drawerDoctor)" options={{ headerShown: false }} />
+      <Stack.Screen name="(drawerPatient)" options={{ headerShown: false }} />
     </Stack>
   );
 };

@@ -216,6 +216,30 @@ const NewAssessmentScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+  const resetForm = () => {
+    setCurrentStep(1);
+    setCompletedSteps([]);
+    setPatientType("existing");
+    setExistingSearch("");
+    setSelectedPatientName("");
+    setSelectedPatientId(null);
+    setFirstName("");
+    setLastName("");
+    setMiddleInitial("");
+    setAge("");
+    setSystolic("");
+    setDiastolic("");
+    setBloodSugar("");
+    setTemperature("");
+    setHeartRate("");
+    setHemoglobin("");
+    setSleepHours("");
+    setDietAdherence("Fair");
+    setIronSupplement("0");
+    setFolicSupplement("0");
+    setFieldErrors({});
+  };
+
   const clearFieldError = (key: FieldErrorKey) => {
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
@@ -230,8 +254,10 @@ const NewAssessmentScreen: React.FC = () => {
       const response = await api.get("/patients");
       const patients = (response.data?.data ?? []) as ExistingPatient[];
       setExistingPatients(patients);
-    } catch (error) {
-      console.error("Failed to fetch patients:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("Failed to fetch patients:", error);
+      }
     }
   };
 
@@ -329,9 +355,15 @@ const NewAssessmentScreen: React.FC = () => {
         pathname: "/assessedRisk",
         params: routeParams,
       });
+      
+      // Reset form data for next assessment
+      resetForm();
+      
       console.log("Prediction Response:", response.data);
-    } catch (error) {
-      console.error("API Error:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("API Error:", error);
+      }
     } finally {
       setLoading(false);
     }

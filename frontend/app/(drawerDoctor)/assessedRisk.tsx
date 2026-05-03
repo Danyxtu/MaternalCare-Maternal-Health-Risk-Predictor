@@ -84,7 +84,9 @@ const FeatureRow: React.FC<{
   index: number;
   styles: ReturnType<typeof getAssessedRiskStyles>;
   colorScheme: "light" | "dark";
-}> = ({ feature, index, styles, colorScheme }) => {
+  isLowRisk: boolean;
+  maxWeight: number;
+}> = ({ feature, index, styles, colorScheme, isLowRisk, maxWeight }) => {
   const slideAnim = useRef(new Animated.Value(30)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -107,11 +109,18 @@ const FeatureRow: React.FC<{
 
   const isIncreased = feature.impact === "Increased";
   const absWeight = Math.abs(feature.weight);
-  const barWidth = Math.min(absWeight * 100, 100);
 
-  const impactColor = isIncreased ? "#E11D48" : "#10B981";
-  const barColor = isIncreased ? "#FEE2E2" : "#D1FAE5";
-  const barFillColor = isIncreased ? "#E11D48" : "#10B981";
+  // Normalize bar width based on max weight in the set
+  const barWidth = maxWeight > 0 ? (absWeight / maxWeight) * 100 : 0;
+
+  // Logic:
+  // If Low Risk: Positive (Increased) is GREEN (Good), Negative (Decreased) is RED (Bad)
+  // If High/Mid Risk: Positive (Increased) is RED (Bad), Negative (Decreased) is GREEN (Good)
+  const isGood = isLowRisk ? isIncreased : !isIncreased;
+
+  const impactColor = isGood ? "#10B981" : "#E11D48";
+  const barColor = isGood ? "#D1FAE5" : "#FEE2E2";
+  const barFillColor = isGood ? "#10B981" : "#E11D48";
 
   return (
     <Animated.View
@@ -132,11 +141,17 @@ const FeatureRow: React.FC<{
         <View
           style={[
             styles.impactBadge,
-            { backgroundColor: isIncreased ? "#FFF1F2" : "#ECFDF5" },
+            { backgroundColor: isGood ? "#ECFDF5" : "#FFF1F2" },
           ]}
         >
           <Text style={[styles.impactBadgeText, { color: impactColor }]}>
-            {feature.impact}
+            {isLowRisk
+              ? isIncreased
+                ? "Good"
+                : "Needs Attention"
+              : isIncreased
+                ? "Risk Factor"
+                : "Mitigating"}
           </Text>
         </View>
       </View>
@@ -147,17 +162,33 @@ const FeatureRow: React.FC<{
           style={[
             styles.barFill,
             {
-              width: `${barWidth}%` as any,
+              width: `${Math.max(barWidth, 2)}%` as any, // Minimum 2% visibility
               backgroundColor: barFillColor,
             },
           ]}
         />
       </View>
 
-      <Text style={styles.featureWeight}>
-        Weight: {feature.weight > 0 ? "+" : ""}
-        {feature.weight.toFixed(4)}
-      </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text style={styles.featureWeight}>
+          Weight: {feature.weight > 0 ? "+" : ""}
+          {feature.weight.toFixed(4)}
+        </Text>
+        <Text
+          style={[
+            styles.featureWeight,
+            { fontWeight: "600", color: impactColor },
+          ]}
+        >
+          {Math.round(barWidth)}% Influence
+        </Text>
+      </View>
     </Animated.View>
   );
 };
@@ -197,6 +228,13 @@ const AssessedRiskScreen: React.FC = () => {
 
   const riskConfig = getRiskConfig(result?.predicted_class ?? "");
   const probabilityPercent = ((result?.probability ?? 0) * 100).toFixed(1);
+  const isLowRisk = result?.predicted_class?.toLowerCase().includes("low");
+
+  // Calculate maximum weight for normalization
+  const maxWeight = Math.max(
+    ...(result?.features ?? []).map((f) => Math.abs(f.weight)),
+    0.0001, // Prevent division by zero
+  );
 
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -268,7 +306,8 @@ const AssessedRiskScreen: React.FC = () => {
           visible: true,
           status: "error",
           title: "Invalid Data",
-          message: "Missing or invalid physiological data. Please run a new assessment.",
+          message:
+            "Missing or invalid physiological data. Please run a new assessment.",
         });
         return;
       }
@@ -319,15 +358,20 @@ const AssessedRiskScreen: React.FC = () => {
         visible: true,
         status: "success",
         title: "Report Saved",
-        message: "The patient's assessment report has been successfully saved to the database.",
+        message:
+          "The patient's assessment report has been successfully saved to the database.",
       });
     } catch (error: any) {
-      console.error("Save Report Error:", error);
+      if (error.status !== 401) {
+        console.error("Save Report Error:", error);
+      }
       setModalConfig({
         visible: true,
         status: "error",
         title: "Save Failed",
-        message: error.message || "We encountered an error while saving the report. Please try again.",
+        message:
+          error.message ||
+          "We encountered an error while saving the report. Please try again.",
       });
     } finally {
       setIsSaving(false);
@@ -340,6 +384,17 @@ const AssessedRiskScreen: React.FC = () => {
     if (isSuccess) {
       router.push("/(drawerDoctor)/(tabs)/dashboard");
     }
+  };
+  const formatFeature = (feature: string) => {
+    if (!feature) return "";
+
+    // Removes "num_" prefix
+    const stripped = feature.replace("num__", "");
+
+    // If you actually want Title Case, add this:
+    // return stripped.charAt(0).toUpperCase() + stripped.slice(1);
+
+    return stripped;
   };
 
   return (
@@ -424,62 +479,139 @@ const AssessedRiskScreen: React.FC = () => {
           </View>
 
           <Text style={styles.sectionSubtitle}>
-            Each factor's influence on the predicted risk classification,
-            derived from LIME explainability analysis.
+            {isLowRisk
+              ? "Key factors supporting the healthy status and areas that could be further optimized."
+              : "Each factor's influence on the predicted risk classification, derived from AI explainability analysis."}
           </Text>
 
           <View style={styles.divider} />
 
-          {(result?.features ?? []).map((feature, index) => (
-            <FeatureRow
-              key={index}
-              feature={feature}
-              index={index}
-              styles={styles}
-              colorScheme={colorScheme}
-            />
-          ))}
+          {(result?.features ?? []).map((feature, index) => {
+            const formattedFeature = {
+              ...feature,
+              condition: formatFeature(feature.condition),
+            };
+
+            return (
+              <FeatureRow
+                key={index}
+                feature={formattedFeature}
+                index={index}
+                styles={styles}
+                colorScheme={colorScheme}
+                isLowRisk={isLowRisk}
+                maxWeight={maxWeight}
+              />
+            );
+          })}
         </View>
 
         {/* ── Possible Maternal Risks Card ── */}
-        {result?.possible_maternal_risks && result.possible_maternal_risks.length > 0 && (
-          <View style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <AlertTriangle color="#E11D48" size={20} style={styles.sectionIcon} />
-              <Text style={styles.sectionTitle}>Possible Maternal Risks</Text>
-            </View>
-            <Text style={styles.sectionSubtitle}>
-              Potential health complications identified by AI analysis based on the physiological patterns.
-            </Text>
-            <View style={styles.divider} />
-            {result.possible_maternal_risks.map((risk, index) => (
-              <View key={index} style={{ flexDirection: "row", marginBottom: 8, alignItems: "flex-start" }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#E11D48", marginTop: 8, marginRight: 10 }} />
-                <Text style={{ flex: 1, color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937", fontSize: 14, lineHeight: 20 }}>
-                  {risk}
-                </Text>
+        {!isLowRisk &&
+          result?.possible_maternal_risks &&
+          result.possible_maternal_risks.length > 0 && (
+            <View style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <AlertTriangle
+                  color="#E11D48"
+                  size={20}
+                  style={styles.sectionIcon}
+                />
+                <Text style={styles.sectionTitle}>Possible Maternal Risks</Text>
               </View>
-            ))}
-          </View>
-        )}
+              <Text style={styles.sectionSubtitle}>
+                Potential health complications identified by AI analysis based
+                on the physiological patterns.
+              </Text>
+              <View style={styles.divider} />
+              {result.possible_maternal_risks.map((risk, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    marginBottom: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: "#E11D48",
+                      marginTop: 8,
+                      marginRight: 10,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937",
+                      fontSize: 14,
+                      lineHeight: 20,
+                    }}
+                  >
+                    {risk}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
         {/* ── Recommendations Card ── */}
         {result?.recommendations && result.recommendations.length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <CheckCircle2 color="#10B981" size={20} style={styles.sectionIcon} />
+              <CheckCircle2
+                color="#10B981"
+                size={20}
+                style={styles.sectionIcon}
+              />
               <Text style={styles.sectionTitle}>Medical Recommendations</Text>
             </View>
             <Text style={styles.sectionSubtitle}>
-              Actionable steps and clinical advice generated to mitigate identified risks.
+              Actionable steps and clinical advice generated to mitigate
+              identified risks.
             </Text>
             <View style={styles.divider} />
             {result.recommendations.map((rec, index) => (
-              <View key={index} style={{ flexDirection: "row", marginBottom: 12, alignItems: "flex-start" }}>
-                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#D1FAE5", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: "#065F46" }}>{index + 1}</Text>
+              <View
+                key={index}
+                style={{
+                  flexDirection: "row",
+                  marginBottom: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#D1FAE5",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: "#065F46",
+                    }}
+                  >
+                    {index + 1}
+                  </Text>
                 </View>
-                <Text style={{ flex: 1, color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937", fontSize: 14, lineHeight: 20 }}>
+                <Text
+                  style={{
+                    flex: 1,
+                    color: colorScheme === "dark" ? "#ECEDEE" : "#1F2937",
+                    fontSize: 14,
+                    lineHeight: 20,
+                  }}
+                >
                   {rec}
                 </Text>
               </View>
@@ -499,33 +631,47 @@ const AssessedRiskScreen: React.FC = () => {
           </View>
 
           <View style={styles.legendItem}>
-            <TrendingUp color="#E11D48" size={16} />
+            <TrendingUp color={isLowRisk ? "#10B981" : "#E11D48"} size={16} />
             <Text style={styles.legendText}>
-              <Text style={{ fontWeight: "700", color: "#E11D48" }}>
+              <Text
+                style={{
+                  fontWeight: "700",
+                  color: isLowRisk ? "#10B981" : "#E11D48",
+                }}
+              >
                 Increased
               </Text>{" "}
-              — This factor raises the predicted risk level. A positive weight
-              means it pushed the model toward the current classification.
+              —{" "}
+              {isLowRisk
+                ? "This factor strongly supports the Low Risk classification (Healthy indicator)."
+                : "This factor raises the predicted risk level. A positive weight means it pushed the model toward the current classification."}
             </Text>
           </View>
 
           <View style={styles.legendItem}>
-            <TrendingDown color="#10B981" size={16} />
+            <TrendingDown color={isLowRisk ? "#E11D48" : "#10B981"} size={16} />
             <Text style={styles.legendText}>
-              <Text style={{ fontWeight: "700", color: "#10B981" }}>
+              <Text
+                style={{
+                  fontWeight: "700",
+                  color: isLowRisk ? "#E11D48" : "#10B981",
+                }}
+              >
                 Decreased
               </Text>{" "}
-              — This factor lowers the predicted risk level. A negative weight
-              means it pulled the model away from high-risk classifications.
+              —{" "}
+              {isLowRisk
+                ? "This factor pulls the patient away from Low Risk (Area for optimization)."
+                : "This factor lowers the predicted risk level. A negative weight means it pulled the model away from high-risk classifications."}
             </Text>
           </View>
 
           <View style={styles.legendItem}>
             <Minus color="#94A3B8" size={16} />
             <Text style={styles.legendText}>
-              <Text style={{ fontWeight: "700" }}>Weight magnitude</Text> —
-              Larger absolute values indicate stronger influence on the final
-              prediction. Smaller values have marginal effect.
+              <Text style={{ fontWeight: "700" }}>Influence percentage</Text> —
+              Relative strength of each factor on the final prediction compared
+              to the most significant factor.
             </Text>
           </View>
         </View>

@@ -110,8 +110,10 @@ const DashboardScreen: React.FC = () => {
       if (response.data && response.data.data) {
         setPatients(response.data.data);
       }
-    } catch (error) {
-      console.error("Failed to fetch patients:", error);
+    } catch (error: any) {
+      if (error.status !== 401) {
+        console.error("Failed to fetch patients:", error);
+      }
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -379,8 +381,15 @@ const DashboardScreen: React.FC = () => {
 
                 {/* Table Rows */}
                 {patients.slice(0, 5).map((record, index) => (
-                  <View
+                  <TouchableOpacity
                     key={record.id}
+                    activeOpacity={0.7}
+                    onPress={() => 
+                      router.push({
+                        pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
+                        params: { id: record.id },
+                      })
+                    }
                     style={[
                       styles.tableRow,
                       index === Math.min(patients.length, 5) - 1 && {
@@ -403,7 +412,7 @@ const DashboardScreen: React.FC = () => {
                     <Text style={[styles.tableRowText, styles.colBP]}>
                       {record.bp || "N/A"}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </>
             ) : (
