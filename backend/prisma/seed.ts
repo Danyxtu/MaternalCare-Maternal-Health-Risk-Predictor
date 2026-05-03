@@ -11,12 +11,14 @@ async function main() {
   await prisma.user.deleteMany({});
 
   const doctorEmail = "doctor@test.com";
-  const doctorPassword = "password123";
+  const doctorPassword = "password";
 
   // Create Doctor
   const doctorUser = await prisma.user.upsert({
     where: { email: doctorEmail },
-    update: {},
+    update: {
+      password: doctorPassword,
+    },
     create: {
       email: doctorEmail,
       password: doctorPassword,
@@ -48,10 +50,12 @@ async function main() {
   for (const p of patientsData) {
     const user = await prisma.user.upsert({
       where: { email: p.email },
-      update: {},
+      update: {
+        password: "password",
+      },
       create: {
         email: p.email,
-        password: "password123",
+        password: "password",
         role: Role.PATIENT,
         first_name: p.first_name,
         last_name: p.last_name,

@@ -51,6 +51,10 @@ export class AuthService {
               },
             }),
       },
+      include: {
+        patient: true,
+        doctor: true,
+      },
     });
     return {
       userId: newUser.id,
@@ -59,12 +63,18 @@ export class AuthService {
       last_name: newUser.last_name,
       middle_initial: newUser.middle_initial,
       email: newUser.email,
+      patientId: newUser.patient?.id,
+      doctorId: newUser.doctor?.id,
     };
   }
 
   async login(data: LoginInput): Promise<LoginResponse> {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
+      include: {
+        patient: true,
+        doctor: true,
+      },
     });
 
     if (!user) {
@@ -78,6 +88,8 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        patientId: user.patient?.id,
+        doctorId: user.doctor?.id,
       },
       secret as string,
       { expiresIn: "7d" },
@@ -90,6 +102,8 @@ export class AuthService {
       last_name: user.last_name,
       middle_initial: user.middle_initial,
       email: user.email,
+      patientId: user.patient?.id,
+      doctorId: user.doctor?.id,
     };
   }
 }

@@ -8,6 +8,7 @@ import alertRoutes from "@/src/modules/alert/alert.routes.ts";
 import patientRoutes from "@/src/modules/patient/patient.routes.ts";
 import doctorRoutes from "@/src/modules/doctor/doctor.routes.ts";
 import modelRoutes from "@/src/modules/prediction/prediction.routes.ts";
+import wellnessRoutes from "@/src/modules/wellness/wellness.routes.ts";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/alerts", alertRoutes);
 router.use("/patients", patientRoutes);
 router.use("/doctors", doctorRoutes);
 router.use("/model", modelRoutes);
+router.use("/wellness", wellnessRoutes);
 
 export default router;
