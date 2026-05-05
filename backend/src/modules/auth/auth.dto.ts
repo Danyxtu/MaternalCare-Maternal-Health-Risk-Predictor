@@ -4,18 +4,19 @@ export interface RegisterInput {
   first_name: string;
   last_name: string;
   middle_initial: string;
-  role: "DOCTOR" | "PATIENT";
+  role: "DOCTOR" | "PATIENT" | "ADMIN";
+  id_card_url?: string;
 }
 
 export interface RegisterResponse {
   userId: number;
-  role: "DOCTOR" | "PATIENT";
+  role: string;
   first_name: string | null;
   last_name: string | null;
   middle_initial: string | null;
   email: string;
-  patientId?: number;
-  doctorId?: number;
+  patientId: number | undefined;
+  doctorId: number | undefined;
 }
 
 export interface LoginInput {
@@ -26,11 +27,11 @@ export interface LoginInput {
 export interface LoginResponse {
   token: string;
   userId: number;
-  role: "DOCTOR" | "PATIENT";
+  role: string;
   first_name: string | null;
   last_name: string | null;
   middle_initial: string | null;
   email: string;
-  patientId?: number;
-  doctorId?: number;
+  patientId: number | undefined;
+  doctorId: number | undefined;
 }

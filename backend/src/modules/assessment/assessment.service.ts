@@ -101,8 +101,8 @@ export class AssessmentService {
           risk_score: dto.probability,
           risk_label: dto.predicted_class,
           explanations: dto.features,
-          possible_maternal_risks: dto.possible_maternal_risks,
-          recommendations: dto.recommendations,
+          possible_maternal_risks: dto.possible_maternal_risks ?? [],
+          recommendations: dto.recommendations ?? [],
           notes: dto.notes ?? null,
         },
       });

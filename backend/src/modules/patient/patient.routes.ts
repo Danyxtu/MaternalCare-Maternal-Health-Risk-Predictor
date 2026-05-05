@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { getPatients, getPatientById, getMeDashboard, getMeDoctors } from "./patient.controller.ts";
+import { getPatients, getPatientById, getMeDashboard, getMeDoctors, generateCode, verifyCode } from "./patient.controller.ts";
 import requireAuth from "@/src/middleware/auth.ts";
 
 const router = Router();
@@ -9,6 +9,8 @@ router.use(requireAuth);
 
 router.get("/me/dashboard", getMeDashboard);
 router.get("/me/doctors", getMeDoctors);
+router.post("/generate-code", generateCode);
+router.post("/verify-code", verifyCode);
 
 router.get("/", getPatients);
 

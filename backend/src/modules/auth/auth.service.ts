@@ -3,6 +3,7 @@ dotenv.config();
 
 const secret = process.env.JWT_SECRET;
 import { prisma } from "@/src/lib/prisma.ts";
+import bcrypt from "bcrypt";
 
 import type {
   RegisterInput,
@@ -20,13 +21,16 @@ export class AuthService {
     if (userExists) {
       throw new Error("USER_ALREADY_EXISTS");
     }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
     const newUser = await prisma.user.create({
       data: {
         email: data.email,
         first_name: data.first_name,
         last_name: data.last_name,
         middle_initial: data.middle_initial,
-        password: data.password,
+        password: hashedPassword,
         role: data.role,
         ...(data.role === "DOCTOR"
           ? {
@@ -36,10 +40,12 @@ export class AuthService {
                   last_name: data.last_name || "",
                   middle_initial: data.middle_initial,
                   contact: "N/A",
+                  id_card_url: data.id_card_url,
                 },
               },
             }
-          : {
+          : data.role === "PATIENT"
+          ? {
               patient: {
                 create: {
                   first_name: data.first_name || "",
@@ -49,13 +55,23 @@ export class AuthService {
                   contact: "N/A",
                 },
               },
-            }),
+            }
+          : {}),
       },
       include: {
         patient: true,
         doctor: true,
       },
     });
+
+    await prisma.activity.create({
+      data: {
+        type: "USER_REGISTERED",
+        message: `${newUser.role} account created: ${newUser.first_name} ${newUser.last_name}`,
+        email: newUser.email,
+      },
+    });
+
     return {
       userId: newUser.id,
       role: newUser.role,
@@ -63,8 +79,8 @@ export class AuthService {
       last_name: newUser.last_name,
       middle_initial: newUser.middle_initial,
       email: newUser.email,
-      patientId: newUser.patient?.id,
-      doctorId: newUser.doctor?.id,
+      patientId: newUser.patient?.id ?? undefined,
+      doctorId: newUser.doctor?.id ?? undefined,
     };
   }
 
@@ -80,8 +96,14 @@ export class AuthService {
     if (!user) {
       throw new Error("INVALID_EMAIL_OR_PASSWORD");
     }
-    if (user.password !== data.password) {
+
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+    if (!isPasswordValid) {
       throw new Error("INVALID_EMAIL_OR_PASSWORD");
+    }
+
+    if (user.role === "DOCTOR" && user.doctor?.status !== "APPROVED") {
+      throw new Error("DOCTOR_NOT_APPROVED");
     }
     const token = jwt.sign(
       {
@@ -102,8 +124,8 @@ export class AuthService {
       last_name: user.last_name,
       middle_initial: user.middle_initial,
       email: user.email,
-      patientId: user.patient?.id,
-      doctorId: user.doctor?.id,
+      patientId: user.patient?.id ?? undefined,
+      doctorId: user.doctor?.id ?? undefined,
     };
   }
 }

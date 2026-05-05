@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "Role" ADD VALUE 'ADMIN';
+
+-- AlterTable
+ALTER TABLE "Doctor" ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'PENDING';

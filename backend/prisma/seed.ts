@@ -1,17 +1,41 @@
 import { Role, AlertSeverity, AlertStatus, AlertType } from "../src/generated/prisma/index.js";
 import { prisma } from "../src/lib/prisma.ts";
+import bcrypt from "bcrypt";
 
 async function main() {
   // Clear existing data to avoid unique constraint violations
   await prisma.notification.deleteMany({});
   await prisma.alert.deleteMany({});
+  await prisma.activity.deleteMany({});
   await prisma.assessment.deleteMany({});
+  await prisma.wellnessCheck.deleteMany({});
+  await prisma.accessCode.deleteMany({});
   await prisma.patient.deleteMany({});
   await prisma.doctor.deleteMany({});
   await prisma.user.deleteMany({});
 
+  const adminPassword = await bcrypt.hash("Password123", 10);
   const doctorEmail = "doctor@test.com";
-  const doctorPassword = "password";
+  const doctorPassword = await bcrypt.hash("password", 10);
+  const patientPassword = await bcrypt.hash("password", 10);
+
+  // Create Admin
+  await prisma.user.upsert({
+    where: { email: "admin@test.com" },
+    update: {
+      password: adminPassword,
+      role: Role.ADMIN,
+    },
+    create: {
+      email: "admin@test.com",
+      password: adminPassword,
+      role: Role.ADMIN,
+      first_name: "System",
+      last_name: "Admin",
+    },
+  });
+
+  console.log("Admin user seeded: admin@test.com");
 
   // Create Doctor
   const doctorUser = await prisma.user.upsert({
@@ -29,6 +53,7 @@ async function main() {
         create: {
           first_name: "John",
           last_name: "Doe",
+          status: "APPROVED",
           contact: "1234567890",
         },
       },
@@ -51,11 +76,11 @@ async function main() {
     const user = await prisma.user.upsert({
       where: { email: p.email },
       update: {
-        password: "password",
+        password: patientPassword,
       },
       create: {
         email: p.email,
-        password: "password",
+        password: patientPassword,
         role: Role.PATIENT,
         first_name: p.first_name,
         last_name: p.last_name,
@@ -76,14 +101,14 @@ async function main() {
       const assessment = await prisma.assessment.create({
         data: {
           patientId: user.patient.id,
-          doctorId: doctor?.id,
+          doctorId: doctor?.id ?? null,
           version: 1,
           physiological_data: {
-            SystolicBP: parseInt(p.bp.split('/')[0]),
-            DiastolicBP: parseInt(p.bp.split('/')[1]),
+            SystolicBP: parseInt((p.bp ?? "120/80").split('/')[0] ?? "120"),
+            DiastolicBP: parseInt((p.bp ?? "120/80").split('/')[1] ?? "80"),
             BS: p.bloodSugar,
             HeartRate: p.heartRate,
-            BodyTemp: 37.0,
+            BodyTemp: 98.6,
             Age: p.age,
             sleep_hours: 8,
             hemoglobin_g_dL: 12,
@@ -104,7 +129,7 @@ async function main() {
           data: {
             assessmentId: assessment.id,
             patientId: user.patient.id,
-            assigneeId: doctor?.id,
+            assigneeId: doctor?.id ?? null,
             type: AlertType.MATERNAL_RISK,
             severity: AlertSeverity.CRITICAL,
             status: AlertStatus.OPEN,
@@ -116,7 +141,7 @@ async function main() {
           data: {
             assessmentId: assessment.id,
             patientId: user.patient.id,
-            assigneeId: doctor?.id,
+            assigneeId: doctor?.id ?? null,
             type: AlertType.MATERNAL_RISK,
             severity: AlertSeverity.WARNING,
             status: AlertStatus.OPEN,

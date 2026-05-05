@@ -31,6 +31,9 @@ export const login = async (req: Request, res: Response) => {
     if (error.message === "INVALID_EMAIL_OR_PASSWORD") {
       return res.status(400).json({ message: "Invalid email or password" });
     }
+    if (error.message === "DOCTOR_NOT_APPROVED") {
+      return res.status(403).json({ message: "Doctor account is pending approval" });
+    }
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }

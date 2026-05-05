@@ -60,4 +60,41 @@ router.get("/profile", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+router.put("/profile", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = Number((req.user as any).id);
+    const { first_name, last_name, middle_initial, email } = req.body;
+
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        first_name,
+        last_name,
+        middle_initial,
+        email,
+      },
+    });
+
+    await prisma.activity.create({
+      data: {
+        type: "PROFILE_UPDATED",
+        message: `User profile updated: ${updatedUser.first_name} ${updatedUser.last_name}`,
+        email: updatedUser.email,
+      },
+    });
+
+    res.json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: "Email is already in use by another account." });
+    }
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 export default router;

@@ -18,7 +18,7 @@ export async function generateClinicalInsights(
     You are a medical assistant specializing in maternal health. 
     Based on the following patient data and a machine learning risk assessment, provide a list of possible maternal risks and medical recommendations.
 
-    Patient Physiological Data:
+    Patient Physiological Data (Note: BodyTemp is in Fahrenheit):
     ${JSON.stringify(physiologicalData, null, 2)}
 
     Machine Learning Assessment:

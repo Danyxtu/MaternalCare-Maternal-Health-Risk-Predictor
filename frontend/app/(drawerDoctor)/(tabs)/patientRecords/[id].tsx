@@ -141,7 +141,7 @@ const PatientRecordDetail: React.FC = () => {
             </Text>
             <Text style={styles.cellText}>Heart Rate {item.heartRate} bpm</Text>
             <Text style={styles.cellText}>
-              Body Temp {item.bodyTemp.toFixed(1)} °C
+              Body Temp {item.bodyTemp.toFixed(1)} °F
             </Text>
           </View>
           <View style={[styles.historyCell, styles.colRiskHistory]}>
@@ -506,7 +506,7 @@ const PatientRecordDetail: React.FC = () => {
                           color: colorScheme === "dark" ? "#F9FAFB" : "#111827",
                         }}
                       >
-                        {selectedAssessment.bodyTemp.toFixed(1)} °C
+                        {selectedAssessment.bodyTemp.toFixed(1)} °F
                       </Text>
                     </View>
                   </View>

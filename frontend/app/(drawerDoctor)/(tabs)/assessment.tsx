@@ -207,6 +207,7 @@ const NewAssessmentScreen: React.FC = () => {
   const [diastolic, setDiastolic] = useState("");
   const [bloodSugar, setBloodSugar] = useState("");
   const [temperature, setTemperature] = useState("");
+  const [tempUnit, setTempUnit] = useState<"C" | "F">("F");
   const [heartRate, setHeartRate] = useState("");
   const [hemoglobin, setHemoglobin] = useState("");
   const [sleepHours, setSleepHours] = useState("");
@@ -321,12 +322,18 @@ const NewAssessmentScreen: React.FC = () => {
           ? selectedPatientName || existingSearch.trim()
           : formatNewPatientName();
 
+      let finalTemp = parseFloat(temperature) || 0;
+      if (tempUnit === "C") {
+        // Convert C to F: (C * 9/5) + 32
+        finalTemp = (finalTemp * 9) / 5 + 32;
+      }
+
       const physiologicalData = [
         parseFloat(age) || 0,           // 0: Age
         parseFloat(systolic) || 0,      // 1: SystolicBP
         parseFloat(diastolic) || 0,     // 2: DiastolicBP
         parseFloat(bloodSugar) || 0,    // 3: BS
-        parseFloat(temperature) || 0,   // 4: BodyTemp
+        finalTemp,                      // 4: BodyTemp
         parseFloat(heartRate) || 0,     // 5: HeartRate
         parseFloat(sleepHours) || 0,    // 6: sleep_hours
         parseFloat(hemoglobin) || 0,    // 7: hemoglobin_g_dL
@@ -620,19 +627,54 @@ const NewAssessmentScreen: React.FC = () => {
               keyboardType="numeric"
             />
 
-            <InputField
-              label="Body Temperature"
-              icon={<Thermometer color="#F97316" size={16} />}
-              placeholder="e.g., 37.0"
-              helperText="Normal: 36.5-37.5°C"
-              value={temperature}
-              errorText={fieldErrors.temperature}
-              onChangeText={(text) => {
-                setTemperature(text);
-                if (text.trim() !== "") clearFieldError("temperature");
-              }}
-              keyboardType="numeric"
-            />
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelIcon}>
+                  <Thermometer color="#F97316" size={16} />
+                </View>
+                <Text style={styles.label}>
+                  Body Temperature <Text style={styles.requiredAsterisk}>*</Text>
+                </Text>
+              </View>
+              <View style={[styles.selectorContainer, { marginBottom: 8 }]}>
+                {(["F", "C"] as const).map((unit) => (
+                  <TouchableOpacity
+                    key={unit}
+                    style={[
+                      styles.selectorOption,
+                      tempUnit === unit && styles.selectorOptionActive,
+                      { paddingVertical: 6 }
+                    ]}
+                    onPress={() => setTempUnit(unit)}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        tempUnit === unit && styles.selectorOptionTextActive,
+                        { fontSize: 12 }
+                      ]}
+                    >
+                      °{unit} {unit === "F" ? "(System Priority)" : ""}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {!!fieldErrors.temperature && <Text style={styles.errorText}>{fieldErrors.temperature}</Text>}
+              <TextInput
+                style={[styles.textInput, !!fieldErrors.temperature && styles.errorInput]}
+                placeholder={tempUnit === "F" ? "e.g., 98.6" : "e.g., 37.0"}
+                placeholderTextColor="#94A3B8"
+                value={temperature}
+                onChangeText={(text) => {
+                  setTemperature(text);
+                  if (text.trim() !== "") clearFieldError("temperature");
+                }}
+                keyboardType="numeric"
+              />
+              <Text style={styles.helperText}>
+                {tempUnit === "F" ? "Normal: 97.7-99.5°F" : "Normal: 36.5-37.5°C"}
+              </Text>
+            </View>
 
             <InputField
               label="Heart Rate"
