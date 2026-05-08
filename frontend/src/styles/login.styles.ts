@@ -124,5 +124,22 @@ export const getLoginScreenStyles = (theme: Theme) => {
       fontSize: 14,
       fontWeight: "700",
     },
+    errorContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#FEE2E2",
+      padding: 12,
+      borderRadius: 12,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: "#FECACA",
+    },
+    errorText: {
+      color: "#DC2626",
+      fontSize: 14,
+      fontWeight: "600",
+      marginLeft: 8,
+      flex: 1,
+    },
   });
 };

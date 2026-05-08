@@ -6,7 +6,9 @@ declare global {
       user?: {
         email: string;
         id: number;
-        // Add any other fields you put in your JWT payload
+        role: string;
+        patientId: number | undefined;
+        doctorId: number | undefined;
       };
     }
   }

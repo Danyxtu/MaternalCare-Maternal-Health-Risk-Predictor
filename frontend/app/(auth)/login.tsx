@@ -10,15 +10,17 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Heart, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react-native";
 import { getLoginScreenStyles } from "#styles/login.styles.ts";
 import { useAuth } from "#context/authContext.tsx";
+import AppLogo from "#/src/components/AppLogo";
 
 const LoginScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const styles = getLoginScreenStyles(colorScheme);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Login
   const { login } = useAuth();
@@ -28,11 +30,17 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     try {
+      setError(null);
       await login({ email, password });
       // On successful login, the user will be redirected by the RootLayout logic
-    } catch (error) {
-      console.error("Login failed:", error);
-      // Optionally show an error message to the user
+    } catch (err: any) {
+      // Handle "Pending Approval" status (403 Forbidden)
+      if (err.response && err.response.status === 403) {
+        router.push("/(auth)/pendingApproval");
+      } else {
+        const message = err.response?.data?.message || "Invalid email or password. Please try again.";
+        setError(message);
+      }
     }
   };
 
@@ -44,8 +52,8 @@ const LoginScreen: React.FC = () => {
       >
         {/* Top Section: Logo & Welcome Text */}
         <View style={styles.headerContainer}>
-          <View style={styles.logoBox}>
-            <Heart color="#FFFFFF" size={40} fill="#FFFFFF" />
+          <View style={{ backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+            <AppLogo size={200} borderColor="#E11D48" backgroundColor="transparent" borderWidth={4} imageScale={1.5} />
           </View>
           <Text style={styles.brandName}>MaternalCare</Text>
           <Text style={styles.welcomeText}>Welcome Back</Text>
@@ -56,6 +64,14 @@ const LoginScreen: React.FC = () => {
 
         {/* Form Section */}
         <View style={styles.formContainer}>
+          {/* Inline Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <AlertCircle color="#DC2626" size={20} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
           {/* Email Input */}
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Email Address</Text>
@@ -68,7 +84,10 @@ const LoginScreen: React.FC = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (error) setError(null);
+                }}
               />
             </View>
           </View>
@@ -84,7 +103,10 @@ const LoginScreen: React.FC = () => {
                 placeholderTextColor="#94A3B8"
                 secureTextEntry={!showPassword}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (error) setError(null);
+                }}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}

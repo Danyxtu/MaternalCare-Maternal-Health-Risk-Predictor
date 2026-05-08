@@ -53,9 +53,9 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
     req.user = { 
       email: user.email, 
       id: user.id,
-      patientId: user.patient?.id,
-      doctorId: user.doctor?.id,
-      role: user.role
+      patientId: user.patient?.id ?? undefined,
+      doctorId: user.doctor?.id ?? undefined,
+      role: user.role.toString()
     };
     // 4. Move to the next function
     next();

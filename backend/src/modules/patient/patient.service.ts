@@ -4,17 +4,28 @@ export class PatientService {
   async getPatientSummaries(doctorId: number) {
     const patients = await prisma.patient.findMany({
       where: {
-        assessments: {
-          some: {
-            doctorId: doctorId
+        OR: [
+          {
+            assessments: {
+              some: {
+                doctorId: doctorId
+              }
+            }
+          },
+          {
+            accessCodes: {
+              some: {
+                usedById: doctorId,
+                usedAt: {
+                  gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Access valid for 24 hours
+                }
+              }
+            }
           }
-        }
+        ]
       },
       include: {
         assessments: {
-          where: {
-            doctorId: doctorId
-          },
           orderBy: {
             createdAt: 'desc'
           },
@@ -79,7 +90,7 @@ export class PatientService {
           diastolic: physData.DiastolicBP || 0,
           bloodSugar: physData.BS || physData.BloodSugar || 0,
           heartRate: physData.HeartRate || 0,
-          bodyTemp: physData.BodyTemp || physData.BodyTemperature || 37.0,
+          bodyTemp: physData.BodyTemp || physData.BodyTemperature || 98.6,
           riskLevel: a.risk_label,
           riskScore: a.risk_score,
           possible_maternal_risks: a.possible_maternal_risks,
@@ -141,5 +152,50 @@ export class PatientService {
         specialty: "Maternal Health Specialist", // Placeholder
         contact: a.doctor!.contact,
       }));
+  }
+
+  async generateAccessCode(patientId: number) {
+    // Generate a 6-digit random code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Expires in 10 minutes
+
+    const accessCode = await prisma.accessCode.create({
+      data: {
+        code,
+        patientId,
+        expiresAt,
+      },
+    });
+
+    return accessCode;
+  }
+
+  async verifyAccessCode(code: string, doctorId: number) {
+    const accessCode = await prisma.accessCode.findUnique({
+      where: { code },
+    });
+
+    if (!accessCode) {
+      throw new Error("INVALID_CODE");
+    }
+
+    if (accessCode.expiresAt < new Date()) {
+      throw new Error("CODE_EXPIRED");
+    }
+
+    if (accessCode.usedAt) {
+      throw new Error("CODE_ALREADY_USED");
+    }
+
+    // Update the code to mark it as used
+    const updated = await prisma.accessCode.update({
+      where: { id: accessCode.id },
+      data: {
+        usedById: doctorId,
+        usedAt: new Date(),
+      },
+    });
+
+    return updated;
   }
 }

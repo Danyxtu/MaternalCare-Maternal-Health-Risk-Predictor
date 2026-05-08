@@ -36,6 +36,7 @@ type AlertVariant = "high" | "medium";
 
 interface AlertData {
   id: string;
+  patientId: string;
   patientName: string;
   statusText: string;
   age: number;
@@ -139,7 +140,7 @@ const AlertCard: React.FC<{ alert: AlertData }> = ({ alert }) => {
           ]}
           onPress={() =>
             router.push({
-              pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
+              pathname: "/(drawerDoctor)/alertDetails",
               params: { id: alert.id },
             })
           }
@@ -228,7 +229,6 @@ const AlertSystemScreen: React.FC = () => {
       setStats(statsRes.data.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("Failed to fetch alerts data:", error);
       }
     }
   };

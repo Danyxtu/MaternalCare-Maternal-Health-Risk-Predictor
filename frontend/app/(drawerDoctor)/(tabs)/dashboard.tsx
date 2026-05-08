@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { get } from "#/src/api/api";
+import { get, post } from "#/src/api/api";
 import {
   View,
   Text,
@@ -17,12 +17,17 @@ import {
   Activity,
   TrendingUp,
   Layout,
+  Scan,
+  X,
+  ChevronRight,
+  QrCode,
 } from "lucide-react-native";
 import { getDashboardScreenStyles } from "#/src/styles/dashboard.styles";
 import { useRouter, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { LineChart, PieChart } from "react-native-chart-kit";
+import { PieChart } from "react-native-chart-kit";
 import RiskPatientsModal from "#/src/components/Doctor/RiskPatientsModal";
+import AccessCodeModal from "#/src/components/Doctor/AccessCodeModal";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -34,13 +39,6 @@ interface StatCardProps {
   subtitle?: string;
   icon: React.ReactNode;
   iconBgColor: string;
-}
-
-interface AssessmentRecord {
-  id: string;
-  name: string;
-  age: number;
-  bp: string;
 }
 
 type RiskLevel = "low" | "medium" | "high";
@@ -59,8 +57,6 @@ interface PatientSummary {
   bp?: string;
   risk: RiskLevel;
 }
-
-// --- Mock Data ---
 
 // --- Components ---
 
@@ -93,15 +89,14 @@ const DashboardScreen: React.FC = () => {
   const styles = getDashboardScreenStyles(colorScheme);
   const navigation = useNavigation();
 
-  const [selectedRisk, setSelectedRisk] = useState<RiskBreakdownItem | null>(
-    null,
-  );
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedRisk, setSelectedRisk] = useState<RiskBreakdownItem | null>(null);
   const router = useRouter();
 
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAccessCodeModalVisible, setIsAccessCodeModalVisible] = useState(false);
 
   const fetchPatients = async ({ showLoader = true } = {}) => {
     try {
@@ -112,7 +107,6 @@ const DashboardScreen: React.FC = () => {
       }
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("Failed to fetch patients:", error);
       }
     } finally {
       if (showLoader) setIsLoading(false);
@@ -166,7 +160,6 @@ const DashboardScreen: React.FC = () => {
   const handleSlicePress = (riskKey: RiskLevel) => {
     const risk = riskBreakdown.find((r) => r.key === riskKey);
     if (!risk) return;
-    console.log("Pie slice pressed", riskKey);
     setSelectedRisk(risk);
     setIsModalVisible(true);
   };
@@ -193,6 +186,12 @@ const DashboardScreen: React.FC = () => {
             Overview of maternal health monitoring
           </Text>
         </View>
+        <TouchableOpacity
+          style={[styles.headerIcon, { backgroundColor: '#10B98120' }]}
+          onPress={() => setIsAccessCodeModalVisible(true)}
+        >
+          <QrCode color="#10B981" size={24} />
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -214,6 +213,35 @@ const DashboardScreen: React.FC = () => {
             />
           }
         >
+          {/* Quick Access Card */}
+          <TouchableOpacity 
+            style={{ 
+              backgroundColor: '#10B98110', 
+              marginHorizontal: 20, 
+              marginTop: 10, 
+              padding: 16, 
+              borderRadius: 16, 
+              flexDirection: 'row', 
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#10B98130'
+            }}
+            onPress={() => setIsAccessCodeModalVisible(true)}
+          >
+            <View style={{ backgroundColor: '#10B981', padding: 10, borderRadius: 12 }}>
+              <QrCode color="#FFFFFF" size={20} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colorScheme === 'dark' ? '#FFFFFF' : '#11181C' }}>
+                One-Click Share Access
+              </Text>
+              <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+                Scan QR or enter code to view patient history
+              </Text>
+            </View>
+            <ChevronRight color="#64748B" size={20} />
+          </TouchableOpacity>
+
           {/* Stats Row Section (Horizontally Scrollable) */}
           <ScrollView
             horizontal
@@ -286,10 +314,10 @@ const DashboardScreen: React.FC = () => {
                     }}
                     accessor={"population"}
                     backgroundColor={"transparent"}
-                    paddingLeft={(screenWidth / 4).toString()} // Centers the pie when hasLegend is false
+                    paddingLeft={(screenWidth / 4).toString()}
                     center={[0, 0]}
                     absolute
-                    hasLegend={false} // Hide internal legend to center the pie
+                    hasLegend={false}
                   />
                 </View>
 
@@ -394,7 +422,7 @@ const DashboardScreen: React.FC = () => {
                       styles.tableRow,
                       index === Math.min(patients.length, 5) - 1 && {
                         borderBottomWidth: 0,
-                      }, // Hide border on last item
+                      },
                     ]}
                   >
                     <Text
@@ -437,6 +465,21 @@ const DashboardScreen: React.FC = () => {
                 pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
                 params: { id: patientId },
               });
+            }}
+          />
+
+          <AccessCodeModal
+            visible={isAccessCodeModalVisible}
+            onClose={() => setIsAccessCodeModalVisible(false)}
+            onSuccess={(patientId) => {
+              // Navigate to patient detail
+              router.push({
+                pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
+                params: { id: patientId },
+              });
+              
+              // Refresh patients list to include the new one
+              fetchPatients({ showLoader: false });
             }}
           />
         </ScrollView>

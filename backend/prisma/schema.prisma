@@ -22,13 +22,27 @@ model User {
   role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
 
+  // Reset Password Fields
+  resetToken     String?
+  resetOtp       String?
+  resetExpiresAt DateTime?
+
   patient   Patient?
   doctor    Doctor?
+}
+
+model Activity {
+  id        Int      @id @default(autoincrement())
+  type      String   // e.g., "USER_CREATED", "DOCTOR_APPROVED", "DOCTOR_REJECTED"
+  message   String
+  email     String?
+  createdAt DateTime @default(now())
 }
 
 enum Role {
   PATIENT
   DOCTOR
+  ADMIN
 }
 
 model Patient {
@@ -47,6 +61,18 @@ model Patient {
   alerts      Alert[]
   notifications Notification[]
   wellnessChecks WellnessCheck[]
+  accessCodes AccessCode[]
+}
+
+model AccessCode {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  patientId   Int
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  usedById    Int?     // Doctor ID who used it
+  usedAt      DateTime?
 }
 
 model WellnessCheck {
@@ -70,6 +96,8 @@ model Doctor {
   first_name     String
   last_name      String
   middle_initial String?
+  status         String   @default("PENDING")
+  id_card_url    String?
   contact   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

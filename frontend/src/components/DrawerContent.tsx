@@ -16,7 +16,6 @@ import {
   FileText,
   Activity,
   AlertTriangle,
-  Heart,
   Layout,
   Settings,
   User,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react-native";
 import { getDrawerContentStyles } from "#/src/styles/drawer.styles";
 import { useAuth } from "#/src/context/authContext";
+import AppLogo from "./AppLogo";
 
 // --- Types ---
 interface DrawerItemProps {
@@ -153,8 +153,8 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.logoRow}>
-            <View style={styles.logoIconContainer}>
-              <Heart color="#FFFFFF" size={24} fill="#FFFFFF" />
+            <View style={[styles.logoIconContainer, { backgroundColor: 'transparent', width: 40, height: 40 }]}>
+              <AppLogo size={40} borderColor="#E11D48" backgroundColor="transparent" borderWidth={2} imageScale={1.1} />
             </View>
             <View style={styles.logoTextContainer}>
               <Text style={styles.brandName}>MaternalCare</Text>

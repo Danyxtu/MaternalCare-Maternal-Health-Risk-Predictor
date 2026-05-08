@@ -183,7 +183,7 @@ const ModelExplanationScreen: React.FC = () => {
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: "#10B981" }}
               >
-                70.44%
+                75.37%
               </Text>
               <Text style={{ fontSize: 12, color: "#64748B" }}>Accuracy</Text>
             </View>

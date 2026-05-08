@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   useColorScheme,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -15,13 +17,17 @@ import {
   AlertCircle,
   CheckCircle2,
   User,
-  Heart,
   Droplet,
+  Thermometer,
+  Activity,
+  ClipboardList,
 } from "lucide-react-native";
 import { getAlertDetailsScreenStyles } from "#/src/styles/alertDetails.styles";
-import { router } from "expo-router";
-import { CartesianChart, Bar } from "victory-native";
-import { Svg, Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
+import { router, useLocalSearchParams } from "expo-router";
+import { BarChart, LineChart } from "react-native-chart-kit";
+import { Svg, Polygon, Line as SvgLine, Circle, Text as SvgText } from "react-native-svg";
+import { get } from "#/src/api/api";
+import AppLogo from "#/src/components/AppLogo";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -42,9 +48,32 @@ interface PredictionProp {
   description: string;
 }
 
+interface AlertDetailData {
+  id: string;
+  patientId: string;
+  patientName: string;
+  age: number;
+  overallRisk: string;
+  severity: string;
+  createdAt: string;
+  physiologicalData: any;
+  predictions: any[];
+  recommendations: string[];
+  possibleRisks: string[];
+  history: any[];
+}
+
 // --- Theme Configuration ---
-const severityThemes = {
+const severityThemes: Record<string, any> = {
   HIGH: {
+    bg: "#FFF1F2",
+    borderLeft: "#E11D48",
+    textMain: "#E11D48",
+    textDark: "#9F1239",
+    badgeBg: "#FECDD3",
+    icon: <AlertTriangle color="#E11D48" size={20} />,
+  },
+  CRITICAL: {
     bg: "#FFF1F2",
     borderLeft: "#E11D48",
     textMain: "#E11D48",
@@ -60,6 +89,14 @@ const severityThemes = {
     badgeBg: "#FDE68A",
     icon: <AlertCircle color="#D97706" size={20} />,
   },
+  WARNING: {
+    bg: "#FFFBEB",
+    borderLeft: "#F59E0B",
+    textMain: "#D97706",
+    textDark: "#92400E",
+    badgeBg: "#FDE68A",
+    icon: <AlertCircle color="#D97706" size={20} />,
+  },
   LOW: {
     bg: "#ECFDF5",
     borderLeft: "#10B981",
@@ -68,46 +105,14 @@ const severityThemes = {
     badgeBg: "#D1FAE5",
     icon: <CheckCircle2 color="#10B981" size={20} />,
   },
-};
-
-// --- Mock Data (Maria Garcia - High Risk) ---
-const patientData = {
-  name: "Maria Garcia",
-  date: "Saturday, February 21, 2026",
-  time: "04:15 PM",
-  overallRisk: "HIGH" as RiskSeverity,
-  predictions: [
-    {
-      factor: "Age",
-      severity: "HIGH",
-      description: "Advanced maternal age (>35) associated with higher risks",
-    },
-    {
-      factor: "Blood Pressure",
-      severity: "HIGH",
-      description: "Hypertension detected - risk of preeclampsia",
-    },
-    {
-      factor: "Blood Sugar",
-      severity: "MEDIUM",
-      description: "Elevated blood sugar - monitor for gestational diabetes",
-    },
-    {
-      factor: "Body Temperature",
-      severity: "LOW",
-      description: "Body temperature normal",
-    },
-    {
-      factor: "Heart Rate",
-      severity: "MEDIUM",
-      description: "Slightly elevated heart rate",
-    },
-  ] as PredictionProp[],
-  recommendations: [
-    "Immediate consultation with obstetrician recommended",
-    "Daily vital signs monitoring required",
-    "Consider hospitalization for close observation",
-  ],
+  INFO: {
+    bg: "#ECFDF5",
+    borderLeft: "#10B981",
+    textMain: "#10B981",
+    textDark: "#065F46",
+    badgeBg: "#D1FAE5",
+    icon: <CheckCircle2 color="#10B981" size={20} />,
+  },
 };
 
 // --- Sub-Components ---
@@ -127,7 +132,7 @@ const VitalCard: React.FC<VitalCardProps> = ({
         <View style={[styles.vitalIconBox, { backgroundColor: iconBgColor }]}>
           {icon}
         </View>
-        <Text style={styles.vitalLabel}>{label}</Text>
+        <Text style={styles.vitalLabel} numberOfLines={1}>{label}</Text>
       </View>
       <Text style={styles.vitalValue}>{value}</Text>
       <Text style={styles.vitalUnit}>{unit}</Text>
@@ -140,7 +145,7 @@ const PredictionCard: React.FC<PredictionProp> = ({
   severity,
   description,
 }) => {
-  const theme = severityThemes[severity];
+  const theme = severityThemes[severity] || severityThemes.LOW;
   const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertDetailsScreenStyles(colorScheme);
   const textColor = theme.textDark;
@@ -225,7 +230,7 @@ const RadarChart = ({
 
     return (
       <React.Fragment key={i}>
-        <Line
+        <SvgLine
           x1={centerX}
           y1={centerY}
           x2={x}
@@ -275,22 +280,94 @@ const RadarChart = ({
 
 // --- Main Screen ---
 const AlertDetailsScreen: React.FC = () => {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const colorScheme = useColorScheme() ?? "light";
   const styles = getAlertDetailsScreenStyles(colorScheme);
-  const isHighRisk = patientData.overallRisk === "HIGH";
-  const headerTheme = severityThemes[patientData.overallRisk];
   const isDark = colorScheme === "dark";
 
-  const radarData = [3, 3, 2, 1, 2]; // Age, BP, Sugar, Temp, HR
-  const radarLabels = ["Age", "BP", "Sugar", "Temp", "HR"];
+  const [alert, setAlert] = useState<AlertDetailData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const barData = [
-    { factor: "Age", risk: 3 },
-    { factor: "BP", risk: 3 },
-    { factor: "Sugar", risk: 2 },
-    { factor: "Temp", risk: 1 },
-    { factor: "HR", risk: 2 },
-  ];
+  const fetchAlertDetail = async () => {
+    try {
+      const response = await get(`/alerts/${id}`);
+      setAlert(response.data.data);
+    } catch (error: any) {
+      console.error("Failed to fetch alert details:", error);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      setIsLoading(true);
+      await fetchAlertDetail();
+      setIsLoading(false);
+    };
+    init();
+  }, [id]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAlertDetail();
+    setRefreshing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#E11D48" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!alert) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ color: isDark ? "#ECEDEE" : "#11181C" }}>Alert not found</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+            <Text style={{ color: "#E11D48" }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const overallRiskLabel = alert.overallRisk === "CRITICAL" ? "HIGH" : (alert.overallRisk === "WARNING" ? "MEDIUM" : "LOW");
+  const headerTheme = severityThemes[alert.overallRisk] || severityThemes.LOW;
+  const isHighRisk = alert.overallRisk === "CRITICAL";
+
+  // Chart Data
+  const radarLabels = ["Age", "BP", "Sugar", "Temp", "HR"];
+  const radarData = alert.predictions.map(p => {
+    if (p.severity === "HIGH") return 3;
+    if (p.severity === "MEDIUM") return 2;
+    return 1;
+  });
+
+  const barData = alert.predictions.map(p => ({
+    factor: p.factor,
+    risk: p.severity === "HIGH" ? 3 : (p.severity === "MEDIUM" ? 2 : 1)
+  }));
+
+  const trendData = alert.history.map((h, i) => ({
+    x: i,
+    risk: h.riskScore,
+    systolic: h.systolic
+  }));
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <SafeAreaView
@@ -311,15 +388,18 @@ const AlertDetailsScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />
+        }
       >
         {/* Patient Header Section */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.patientName}>{patientData.name}</Text>
+            <Text style={styles.patientName}>{alert.patientName}</Text>
             <View style={styles.dateContainer}>
               <Calendar color="#64748B" size={14} style={{ marginRight: 6 }} />
               <Text style={styles.dateText}>
-                {patientData.date} at {patientData.time}
+                {formatDate(alert.createdAt)} at {formatTime(alert.createdAt)}
               </Text>
             </View>
           </View>
@@ -329,7 +409,7 @@ const AlertDetailsScreen: React.FC = () => {
             <Text
               style={[styles.mainBadgeText, { color: headerTheme.textDark }]}
             >
-              {patientData.overallRisk} RISK
+              {overallRiskLabel} RISK
             </Text>
           </View>
         </View>
@@ -366,22 +446,36 @@ const AlertDetailsScreen: React.FC = () => {
             icon={<User color="#8B5CF6" size={18} />}
             iconBgColor="#EDE9FE"
             label="Age"
-            value="38"
+            value={alert.age.toString()}
             unit="years"
           />
           <VitalCard
-            icon={<Heart color="#E11D48" size={18} />}
+            icon={<AppLogo size={18} />}
             iconBgColor="#FFE4E6"
             label="Blood Pressure"
-            value="145/95"
+            value={`${alert.physiologicalData.SystolicBP}/${alert.physiologicalData.DiastolicBP}`}
             unit="mmHg"
           />
           <VitalCard
             icon={<Droplet color="#3B82F6" size={18} />}
             iconBgColor="#DBEAFE"
             label="Blood Sugar"
-            value="110"
+            value={(alert.physiologicalData.BS || alert.physiologicalData.BloodSugar || 0).toString()}
             unit="mmol/L"
+          />
+          <VitalCard
+            icon={<Thermometer color="#F59E0B" size={18} />}
+            iconBgColor="#FEF3C7"
+            label="Body Temp"
+            value={(alert.physiologicalData.BodyTemp || 0).toString()}
+            unit="°F"
+          />
+          <VitalCard
+            icon={<Activity color="#10B981" size={18} />}
+            iconBgColor="#D1FAE5"
+            label="Heart Rate"
+            value={(alert.physiologicalData.HeartRate || 0).toString()}
+            unit="bpm"
           />
         </ScrollView>
 
@@ -398,32 +492,61 @@ const AlertDetailsScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Vitals Trending (Line Chart) */}
+        {trendData.length > 1 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Systolic BP Trend</Text>
+            <View style={{ marginTop: 10, alignItems: 'center' }}>
+              <LineChart
+                data={{
+                  labels: trendData.map((_, i) => (i + 1).toString()),
+                  datasets: [{ data: trendData.map(h => h.systolic) }]
+                }}
+                width={screenWidth - 80}
+                height={200}
+                chartConfig={{
+                  backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
+                  backgroundGradientFrom: isDark ? "#1E293B" : "#FFFFFF",
+                  backgroundGradientTo: isDark ? "#1E293B" : "#FFFFFF",
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(225, 29, 72, ${opacity})`,
+                  labelColor: (opacity = 1) => isDark ? `rgba(148, 163, 184, ${opacity})` : `rgba(100, 116, 139, ${opacity})`,
+                  style: { borderRadius: 16 },
+                  propsForDots: { r: "4", strokeWidth: "2", stroke: "#E11D48" }
+                }}
+                bezier
+                style={{ marginVertical: 8, borderRadius: 16 }}
+              />
+            </View>
+          </View>
+        )}
+
         {/* Risk Contribution by Factor (Bar Chart) */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Risk Contribution by Factor</Text>
-          <View style={{ height: 250, marginTop: 10 }}>
-            <CartesianChart
-              data={barData}
-              xKey="factor"
-              yKeys={["risk"]}
-              domainPadding={{ left: 30, right: 30, top: 20 }}
-              axisOptions={{
-                font: null, // Victory V41 uses Skia fonts, null uses default
-                lineColor: isDark ? "#334155" : "#F1F5F9",
-                labelColor: isDark ? "#94A3B8" : "#64748B",
-                tickCount: 4,
+          <View style={{ marginTop: 10, alignItems: 'center' }}>
+            <BarChart
+              data={{
+                labels: barData.map(d => d.factor),
+                datasets: [{ data: barData.map(d => d.risk) }]
               }}
-            >
-              {({ points, chartBounds }) => (
-                <Bar
-                  chartBounds={chartBounds}
-                  points={points.risk}
-                  roundedCorners={{ topLeft: 4, topRight: 4 }}
-                  color="#E11D48"
-                  barWidth={24}
-                />
-              )}
-            </CartesianChart>
+              width={screenWidth - 80}
+              height={220}
+              yAxisLabel=""
+              yAxisSuffix=""
+              fromZero
+              chartConfig={{
+                backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
+                backgroundGradientFrom: isDark ? "#1E293B" : "#FFFFFF",
+                backgroundGradientTo: isDark ? "#1E293B" : "#FFFFFF",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(225, 29, 72, ${opacity})`,
+                labelColor: (opacity = 1) => isDark ? `rgba(148, 163, 184, ${opacity})` : `rgba(100, 116, 139, ${opacity})`,
+                style: { borderRadius: 16 },
+              }}
+              style={{ marginVertical: 8, borderRadius: 16 }}
+              showValuesOnTopOfBars
+            />
           </View>
         </View>
 
@@ -435,23 +558,57 @@ const AlertDetailsScreen: React.FC = () => {
             overall risk assessment.
           </Text>
 
-          {patientData.predictions.map((pred, index) => (
+          {alert.predictions.map((pred, index) => (
             <PredictionCard key={index} {...pred} />
           ))}
         </View>
 
+        {/* Maternal Risks */}
+        {alert.possibleRisks.length > 0 && (
+          <View style={[styles.card, { borderColor: "#FECDD3" }]}>
+             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <AlertTriangle color="#E11D48" size={20} style={{ marginRight: 8 }} />
+                <Text style={[styles.cardTitle, { marginBottom: 0, color: "#9F1239" }]}>Maternal Risks</Text>
+             </View>
+             {alert.possibleRisks.map((risk, index) => (
+                <View key={index} style={styles.bulletRow}>
+                  <View style={[styles.bulletPoint, { backgroundColor: "#E11D48" }]} />
+                  <Text style={[styles.recommendationText, { color: isDark ? "#FECDD3" : "#9F1239" }]}>{risk}</Text>
+                </View>
+             ))}
+          </View>
+        )}
+
         {/* Clinical Recommendations */}
-        <View style={styles.recommendationsCard}>
-          <Text style={styles.recommendationsTitle}>
-            Clinical Recommendations
-          </Text>
-          {patientData.recommendations.map((rec, index) => (
-            <View key={index} style={styles.bulletRow}>
-              <View style={styles.bulletPoint} />
-              <Text style={styles.recommendationText}>{rec}</Text>
-            </View>
-          ))}
-        </View>
+        {alert.recommendations.length > 0 && (
+          <View style={styles.recommendationsCard}>
+            <Text style={styles.recommendationsTitle}>
+              Clinical Recommendations
+            </Text>
+            {alert.recommendations.map((rec, index) => (
+              <View key={index} style={styles.bulletRow}>
+                <View style={styles.bulletPoint} />
+                <Text style={styles.recommendationText}>{rec}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Re-assessment Button */}
+        <TouchableOpacity 
+          style={styles.reassessmentButton}
+          onPress={() => router.push({
+            pathname: "/(drawerDoctor)/(tabs)/assessment",
+            params: { 
+              patientId: alert.patientId,
+              patientName: alert.patientName
+            }
+          })}
+        >
+          <ClipboardList color="#FFFFFF" size={20} />
+          <Text style={styles.reassessmentButtonText}>Perform Re-assessment</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );

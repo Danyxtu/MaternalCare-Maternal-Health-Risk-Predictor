@@ -16,7 +16,6 @@ import {
   User,
   Calendar,
   Activity,
-  Heart,
   Droplet,
   Thermometer,
   Moon,
@@ -27,7 +26,8 @@ import { getNewAssessmentScreenStyles } from "#/src/styles/assessment.styles";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import api from "#api/api.ts";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import AppLogo from "#/src/components/AppLogo";
 
 // --- Types ---
 interface InputFieldProps {
@@ -111,6 +111,7 @@ const NewAssessmentScreen: React.FC = () => {
   const styles = getNewAssessmentScreenStyles(colorScheme);
   const navigation = useNavigation();
   const router = useRouter();
+  const params = useLocalSearchParams<{ patientId?: string; patientName?: string }>();
 
   // Stepper State
   const [currentStep, setCurrentStep] = useState(1);
@@ -207,6 +208,7 @@ const NewAssessmentScreen: React.FC = () => {
   const [diastolic, setDiastolic] = useState("");
   const [bloodSugar, setBloodSugar] = useState("");
   const [temperature, setTemperature] = useState("");
+  const [tempUnit, setTempUnit] = useState<"C" | "F">("F");
   const [heartRate, setHeartRate] = useState("");
   const [hemoglobin, setHemoglobin] = useState("");
   const [sleepHours, setSleepHours] = useState("");
@@ -215,6 +217,27 @@ const NewAssessmentScreen: React.FC = () => {
   const [folicSupplement, setFolicSupplement] = useState("0");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  useEffect(() => {
+    if (params.patientId && params.patientName) {
+      setPatientType("existing");
+      setSelectedPatientId(params.patientId);
+      setSelectedPatientName(params.patientName);
+      setExistingSearch(params.patientName);
+
+      // Auto-fetch patient details to get age
+      const fetchPatientAge = async () => {
+        try {
+          const res = await api.get(`/patients/${params.patientId}`);
+          if (res.data.data.age) {
+            setAge(String(res.data.data.age));
+          }
+        } catch (e) {
+        }
+      };
+      fetchPatientAge();
+    }
+  }, [params.patientId, params.patientName]);
 
   const resetForm = () => {
     setCurrentStep(1);
@@ -321,12 +344,18 @@ const NewAssessmentScreen: React.FC = () => {
           ? selectedPatientName || existingSearch.trim()
           : formatNewPatientName();
 
+      let finalTemp = parseFloat(temperature) || 0;
+      if (tempUnit === "C") {
+        // Convert C to F: (C * 9/5) + 32
+        finalTemp = (finalTemp * 9) / 5 + 32;
+      }
+
       const physiologicalData = [
         parseFloat(age) || 0,           // 0: Age
         parseFloat(systolic) || 0,      // 1: SystolicBP
         parseFloat(diastolic) || 0,     // 2: DiastolicBP
         parseFloat(bloodSugar) || 0,    // 3: BS
-        parseFloat(temperature) || 0,   // 4: BodyTemp
+        finalTemp,                      // 4: BodyTemp
         parseFloat(heartRate) || 0,     // 5: HeartRate
         parseFloat(sleepHours) || 0,    // 6: sleep_hours
         parseFloat(hemoglobin) || 0,    // 7: hemoglobin_g_dL
@@ -358,11 +387,8 @@ const NewAssessmentScreen: React.FC = () => {
       
       // Reset form data for next assessment
       resetForm();
-      
-      console.log("Prediction Response:", response.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("API Error:", error);
       }
     } finally {
       setLoading(false);
@@ -580,7 +606,7 @@ const NewAssessmentScreen: React.FC = () => {
 
             <InputField
               label="Blood Pressure (Systolic)"
-              icon={<Heart color="#EF4444" size={16} />}
+              icon={<AppLogo size={16} />}
               placeholder="e.g., 120"
               helperText="Normal: 90-120 mmHg"
               value={systolic}
@@ -594,7 +620,7 @@ const NewAssessmentScreen: React.FC = () => {
 
             <InputField
               label="Blood Pressure (Diastolic)"
-              icon={<Heart color="#EF4444" size={16} />}
+              icon={<AppLogo size={16} />}
               placeholder="e.g., 80"
               helperText="Normal: 60-80 mmHg"
               value={diastolic}
@@ -620,19 +646,54 @@ const NewAssessmentScreen: React.FC = () => {
               keyboardType="numeric"
             />
 
-            <InputField
-              label="Body Temperature"
-              icon={<Thermometer color="#F97316" size={16} />}
-              placeholder="e.g., 37.0"
-              helperText="Normal: 36.5-37.5°C"
-              value={temperature}
-              errorText={fieldErrors.temperature}
-              onChangeText={(text) => {
-                setTemperature(text);
-                if (text.trim() !== "") clearFieldError("temperature");
-              }}
-              keyboardType="numeric"
-            />
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelIcon}>
+                  <Thermometer color="#F97316" size={16} />
+                </View>
+                <Text style={styles.label}>
+                  Body Temperature <Text style={styles.requiredAsterisk}>*</Text>
+                </Text>
+              </View>
+              <View style={[styles.selectorContainer, { marginBottom: 8 }]}>
+                {(["F", "C"] as const).map((unit) => (
+                  <TouchableOpacity
+                    key={unit}
+                    style={[
+                      styles.selectorOption,
+                      tempUnit === unit && styles.selectorOptionActive,
+                      { paddingVertical: 6 }
+                    ]}
+                    onPress={() => setTempUnit(unit)}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorOptionText,
+                        tempUnit === unit && styles.selectorOptionTextActive,
+                        { fontSize: 12 }
+                      ]}
+                    >
+                      °{unit} {unit === "F" ? "(System Priority)" : ""}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {!!fieldErrors.temperature && <Text style={styles.errorText}>{fieldErrors.temperature}</Text>}
+              <TextInput
+                style={[styles.textInput, !!fieldErrors.temperature && styles.errorInput]}
+                placeholder={tempUnit === "F" ? "e.g., 98.6" : "e.g., 37.0"}
+                placeholderTextColor="#94A3B8"
+                value={temperature}
+                onChangeText={(text) => {
+                  setTemperature(text);
+                  if (text.trim() !== "") clearFieldError("temperature");
+                }}
+                keyboardType="numeric"
+              />
+              <Text style={styles.helperText}>
+                {tempUnit === "F" ? "Normal: 97.7-99.5°F" : "Normal: 36.5-37.5°C"}
+              </Text>
+            </View>
 
             <InputField
               label="Heart Rate"

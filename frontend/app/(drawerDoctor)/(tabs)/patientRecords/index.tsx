@@ -11,12 +11,13 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Layout, Search, Filter, ChevronRight } from "lucide-react-native";
+import { Layout, Search, Filter, ChevronRight, QrCode } from "lucide-react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 
 import { getPatientRecordsScreenStyles } from "#/src/styles/patientRecords.styles";
 import { get } from "#/src/api/api";
+import AccessCodeModal from "#/src/components/Doctor/AccessCodeModal";
 
 // --- Types ---
 interface PatientRecord {
@@ -35,6 +36,7 @@ const PatientRecordsScreen: React.FC = () => {
   const [patients, setPatients] = useState<PatientRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isAccessCodeModalVisible, setIsAccessCodeModalVisible] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -47,7 +49,6 @@ const PatientRecordsScreen: React.FC = () => {
       setPatients(response.data.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("Failed to fetch patients:", error);
       }
     } finally {
       if (showLoader) setIsLoading(false);
@@ -167,6 +168,12 @@ const PatientRecordsScreen: React.FC = () => {
             View and manage all patient assessments
           </Text>
         </View>
+        <TouchableOpacity
+          style={[styles.headerIcon, { backgroundColor: '#10B98120' }]}
+          onPress={() => setIsAccessCodeModalVisible(true)}
+        >
+          <QrCode color="#10B981" size={24} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
@@ -212,6 +219,17 @@ const PatientRecordsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      <AccessCodeModal
+        visible={isAccessCodeModalVisible}
+        onClose={() => setIsAccessCodeModalVisible(false)}
+        onSuccess={(patientId) => {
+          router.push({
+            pathname: "/(drawerDoctor)/(tabs)/patientRecords/[id]",
+            params: { id: patientId },
+          });
+        }}
+      />
     </SafeAreaView>
   );
 };

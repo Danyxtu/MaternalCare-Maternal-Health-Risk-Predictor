@@ -55,6 +55,22 @@ export default function DrawerLayout() {
             drawerLabel: "Settings",
           }}
         />
+
+        <Drawer.Screen
+          name="selfAssessment"
+          options={{
+            title: "Self Assessment",
+            drawerLabel: "Self Assessment",
+          }}
+        />
+
+        <Drawer.Screen
+          name="healthRisk"
+          options={{
+            title: "Health Standing",
+            drawerLabel: "Health Standing",
+          }}
+        />
       </Drawer>
     </GestureHandlerRootView>
   );

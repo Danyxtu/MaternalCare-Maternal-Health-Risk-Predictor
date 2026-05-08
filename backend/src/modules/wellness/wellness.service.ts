@@ -12,11 +12,11 @@ export class WellnessService {
       data: {
         patientId,
         sleep_hours: data.sleep_hours,
-        water_intake: data.water_intake,
-        diet_quality: data.diet_quality,
-        stress_level: data.stress_level,
-        supplements_taken: data.supplements_taken,
-        mood: data.mood,
+        water_intake: data.water_intake ?? null,
+        diet_quality: data.diet_quality ?? null,
+        stress_level: data.stress_level ?? null,
+        supplements_taken: data.supplements_taken ?? null,
+        mood: data.mood ?? null,
         tips: tips,
       },
     });

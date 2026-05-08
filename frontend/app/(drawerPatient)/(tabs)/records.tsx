@@ -199,7 +199,7 @@ const PatientRecordsTimeline: React.FC = () => {
                   </View>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <Text style={{ color: "#4B5563" }}>Body Temp</Text>
-                    <Text style={{ fontWeight: "600" }}>{selectedAssessment.bodyTemp.toFixed(1)} °C</Text>
+                    <Text style={{ fontWeight: "600" }}>{selectedAssessment.bodyTemp.toFixed(1)} °F</Text>
                   </View>
                 </View>
 

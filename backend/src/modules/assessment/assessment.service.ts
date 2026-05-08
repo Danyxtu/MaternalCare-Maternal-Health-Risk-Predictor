@@ -1,5 +1,6 @@
 import { prisma } from "@/src/lib/prisma.ts";
 import type { CreateAssessmentDto } from "./assessment.dto.ts";
+import { AlertSeverity, AlertStatus, AlertType } from "@/src/generated/prisma/index.js";
 
 export class AssessmentService {
   async saveAssessment(userId: number, dto: CreateAssessmentDto) {
@@ -33,42 +34,59 @@ export class AssessmentService {
       console.log("[AssessmentService] Resolved doctorId:", doctor.id);
 
       // 2. Resolve Patient
-      let patientId = dto.patientId;
+      let patientId: number | undefined = undefined;
       
-      // Handle cases where patientId might be NaN or "null" string from mobile
-      if (typeof patientId !== 'number' || isNaN(patientId)) {
-        patientId = undefined;
+      // Try resolving by provided ID first (robust parsing)
+      if (dto.patientId !== undefined && dto.patientId !== null) {
+        const parsedId = parseInt(String(dto.patientId));
+        if (!isNaN(parsedId)) {
+          patientId = parsedId;
+        }
       }
 
       if (!patientId && dto.patientName) {
         console.log("[AssessmentService] Resolving patient by name:", dto.patientName);
         const nameParts = dto.patientName.trim().split(/\s+/).filter(Boolean);
         const firstName = nameParts[0];
-        const lastName = nameParts.at(-1);
+        const lastName = nameParts.length > 1 ? nameParts.at(-1) : "";
 
-        if (!firstName || !lastName) {
+        if (!firstName) {
           throw new Error("Invalid patient name");
         }
 
+        // Try to find existing patient by name (more flexible search)
         const patient = await prisma.patient.findFirst({
           where: {
-            first_name: { equals: firstName, mode: "insensitive" },
-            last_name: { equals: lastName, mode: "insensitive" },
+            OR: [
+              {
+                AND: [
+                  { first_name: { equals: firstName, mode: "insensitive" } },
+                  { last_name: { equals: lastName || "", mode: "insensitive" } }
+                ]
+              },
+              {
+                user: {
+                  OR: [
+                    { first_name: { contains: firstName, mode: "insensitive" } },
+                    { last_name: { contains: lastName || "", mode: "insensitive" } }
+                  ]
+                }
+              }
+            ]
           },
         });
 
         if (patient) {
           patientId = patient.id;
-          console.log("[AssessmentService] Found existing patientId:", patientId);
+          console.log("[AssessmentService] Found existing patientId by name:", patientId);
         } else {
           console.log("[AssessmentService] Creating new patient:", firstName, lastName);
-          // Create new patient
           const newPatient = await prisma.patient.create({
             data: {
               first_name: firstName,
-              last_name: lastName,
+              last_name: lastName || "Unknown",
               age: dto.patientAge ?? dto.physiological_data.Age ?? 0,
-              contact: "N/A", // Default
+              contact: "N/A",
             },
           });
           patientId = newPatient.id;
@@ -77,7 +95,6 @@ export class AssessmentService {
       }
 
       if (!patientId) {
-        console.error("[AssessmentService] Patient could not be resolved. DTO:", dto);
         throw new Error("Patient could not be resolved");
       }
 
@@ -88,26 +105,64 @@ export class AssessmentService {
       });
 
       const nextVersion = lastAssessment ? lastAssessment.version + 1 : 1;
-      console.log("[AssessmentService] Next version for patientId", patientId, "is", nextVersion);
 
-      // 4. Create Assessment
-      const assessment = await prisma.assessment.create({
-        data: {
-          patientId,
-          doctorId: doctor.id,
-          version: nextVersion,
-          physiological_data: dto.physiological_data,
-          model_version: "1.0.0", // Default or from config
-          risk_score: dto.probability,
-          risk_label: dto.predicted_class,
-          explanations: dto.features,
-          possible_maternal_risks: dto.possible_maternal_risks,
-          recommendations: dto.recommendations,
-          notes: dto.notes ?? null,
-        },
+      // 4. Create Assessment and Manage Alerts in a single transaction
+      const assessment = await prisma.$transaction(async (tx) => {
+        const newAssessment = await tx.assessment.create({
+          data: {
+            patientId,
+            doctorId: doctor.id,
+            version: nextVersion,
+            physiological_data: dto.physiological_data,
+            model_version: "1.0.0",
+            risk_score: dto.probability,
+            risk_label: dto.predicted_class,
+            explanations: dto.features,
+            possible_maternal_risks: dto.possible_maternal_risks ?? [],
+            recommendations: dto.recommendations ?? [],
+            notes: dto.notes ?? null,
+          },
+        });
+
+        // 5. Handle Alerts - Always base on the LATEST assessment
+        console.log(`[AssessmentService] Managing alerts for patientId ${patientId}. Risk: ${dto.predicted_class}`);
+        
+        // Resolve ALL previous alerts for this patient
+        await tx.alert.updateMany({
+          where: {
+            patientId: patientId,
+            status: 'OPEN'
+          },
+          data: {
+            status: 'RESOLVED',
+            resolvedAt: new Date()
+          }
+        });
+
+        // Create new alert if necessary
+        const riskLower = dto.predicted_class.toLowerCase();
+        let severity: string | null = null;
+        if (riskLower.includes("high")) severity = 'CRITICAL';
+        else if (riskLower.includes("mid") || riskLower.includes("moderate") || riskLower.includes("medium")) severity = 'WARNING';
+
+        if (severity) {
+          await tx.alert.create({
+            data: {
+              assessmentId: newAssessment.id,
+              patientId: patientId,
+              assigneeId: doctor.id,
+              type: 'MATERNAL_RISK',
+              severity: severity as any,
+              status: 'OPEN',
+              message: `${severity === 'CRITICAL' ? 'High' : 'Moderate'} risk detected for ${dto.patientName || 'patient'}`,
+            }
+          });
+          console.log(`[AssessmentService] New ${severity} alert created.`);
+        }
+
+        return newAssessment;
       });
 
-      console.log("[AssessmentService] Assessment saved successfully. ID:", assessment.id);
       return assessment;
     } catch (error: any) {
       console.error("[AssessmentService Error]", error);

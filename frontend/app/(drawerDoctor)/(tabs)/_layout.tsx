@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, useColorScheme } from "react-native";
 import { Tabs } from "expo-router";
 import {
@@ -7,6 +8,7 @@ import {
   Bell,
   BrainCircuit,
 } from "lucide-react-native";
+import { get } from "#/src/api/api";
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme() ?? "light";
@@ -16,6 +18,32 @@ export default function TabsLayout() {
   const inactiveColor = isDark ? "#94A3B8" : "#64748B";
   const bgColor = isDark ? "#151718" : "#FFFFFF";
   const borderColor = isDark ? "#334155" : "#E2E8F0";
+
+  const [alertStats, setAlertStats] = useState({ total: 0, high: 0, medium: 0 });
+
+  const fetchStats = async () => {
+    try {
+      const res = await get("/alerts/stats");
+      const data = res.data.data;
+      setAlertStats({
+        total: data.total,
+        high: data.high,
+        medium: data.medium,
+      });
+    } catch (error) {
+      // Silently fail for background fetch
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    // Poll every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const badgeCount = alertStats.high + alertStats.medium;
+  const badgeColor = alertStats.high > 0 ? "#EF4444" : "#F59E0B"; // Red for high, Yellow/Orange for medium
 
   return (
     <Tabs
@@ -71,6 +99,13 @@ export default function TabsLayout() {
         options={{
           title: "Alerts",
           tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />,
+          tabBarBadge: badgeCount > 0 ? badgeCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: badgeColor,
+            color: "#FFFFFF",
+            fontSize: 10,
+            lineHeight: 15,
+          },
         }}
       />
       <Tabs.Screen

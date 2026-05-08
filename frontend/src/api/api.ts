@@ -46,6 +46,14 @@ api.interceptors.response.use(
 
 export const get = (url: string, params = {}) => api.get(url, { params });
 export const post = (url: string, data = {}) => api.post(url, data);
+export const upload = (url: string, formData: FormData) => {
+  return api.post(url, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    transformRequest: (data) => data, // Important for FormData in some environments
+  });
+};
 export const put = (url: string, data = {}) => api.put(url, data);
 export const patch = (url: string, data = {}) => api.patch(url, data);
 export const del = (url: string) => api.delete(url);
