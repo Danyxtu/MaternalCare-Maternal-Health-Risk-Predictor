@@ -4,6 +4,35 @@ import { prisma } from "@/src/lib/prisma.ts";
 
 const alertService = new AlertService();
 
+export const getAlertById = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid alert ID" });
+    }
+
+    const userId = Number((req.user as any).id);
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    
+    if (!doctor) {
+      return res.status(403).json({ message: "Only doctors can view alert details" });
+    }
+
+    const alert = await alertService.getAlertDetail(id);
+    if (!alert) {
+      return res.status(404).json({ message: "Alert not found" });
+    }
+
+    res.status(200).json({
+      message: "Alert details retrieved successfully",
+      data: alert,
+    });
+  } catch (error: any) {
+    console.error("[Alert Controller Error]", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const getAlerts = async (req: Request, res: Response) => {
   try {
     const userId = Number((req.user as any).id);

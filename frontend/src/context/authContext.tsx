@@ -16,6 +16,8 @@ interface AuthContextType {
   last_name: string | null;
   middle_initial: string | null;
   email: string | null;
+  age: number | null;
+  contact: string | null;
   isLoading: boolean;
   login: (credentials: object) => Promise<void>;
   logout: () => void;
@@ -28,6 +30,8 @@ interface LoginResponse {
   last_name?: string;
   middle_initial?: string;
   email?: string;
+  age?: number;
+  contact?: string;
 }
 
 interface DecodedToken {
@@ -38,6 +42,8 @@ interface DecodedToken {
   last_name?: string;
   middle_initial?: string;
   email?: string;
+  age?: number;
+  contact?: string;
 }
 
 const TOKEN_KEY = "userToken";
@@ -77,6 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [last_name, setLastName] = useState<string | null>(null);
   const [middle_initial, setMiddleInitial] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [age, setAge] = useState<number | null>(null);
+  const [contact, setContact] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Check for token on app startup (Persistence)
@@ -97,6 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setLastName(decoded.last_name ?? null);
           setMiddleInitial(decoded.middle_initial ?? null);
           setEmail(decoded.email ?? null);
+          setAge(decoded.age ?? null);
+          setContact(decoded.contact ?? null);
           
           try {
             // Verify token with backend
@@ -111,6 +121,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             setLastName(user.last_name);
             setMiddleInitial(user.middle_initial);
             setEmail(user.email);
+
+            if (user.role === "PATIENT" && user.patient) {
+              setAge(user.patient.age);
+              setContact(user.patient.contact);
+            } else if (user.role === "DOCTOR" && user.doctor) {
+              setContact(user.doctor.contact);
+            }
 
             if (!storedRole) {
               storedRole = normalizeRole(user.role);
@@ -148,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         baseURL + "/auth/login",
         credentials,
       );
-      const { token, first_name, last_name, middle_initial, email } = response.data;
+      const { token, first_name, last_name, middle_initial, email, age, contact } = response.data;
       const decoded = jwtDecode<DecodedToken>(token);
       const decodedRole = normalizeRole(decoded.role);
       
@@ -167,6 +184,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLastName(last_name ?? decoded.last_name ?? null);
       setMiddleInitial(middle_initial ?? decoded.middle_initial ?? null);
       setEmail(email ?? decoded.email ?? null);
+      setAge(age ?? decoded.age ?? null);
+      setContact(contact ?? decoded.contact ?? null);
     } catch (error) {
       throw error;
     }
@@ -183,6 +202,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setLastName(null);
     setMiddleInitial(null);
     setEmail(null);
+    setAge(null);
+    setContact(null);
   };
 
   return (
@@ -195,6 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       last_name,
       middle_initial,
       email,
+      age,
+      contact,
       isLoading, 
       login, 
       logout 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login } from "./auth.controller.ts";
+import { register, login, forgotPassword, resetPassword } from "./auth.controller.ts";
 import requireAuth from "@/src/middleware/auth.ts";
 import type { Request, Response } from "express";
 import { prisma } from "@/src/lib/prisma.ts";
@@ -8,6 +8,8 @@ const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 router.get("/profile", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = Number((req.user as any).id);

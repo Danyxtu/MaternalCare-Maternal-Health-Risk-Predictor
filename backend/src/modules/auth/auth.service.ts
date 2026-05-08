@@ -12,8 +12,95 @@ import type {
   LoginResponse,
 } from "./auth.dto.ts";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { sendResetLink, sendResetOtp } from "../../lib/mailer.ts";
 
 export class AuthService {
+  async forgotPassword(email: string, method: "link" | "otp") {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // For security, don't reveal if user exists, but we can throw specific error if internal
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    if (method === "link") {
+      const token = crypto.randomBytes(32).toString("hex");
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken: token,
+          resetExpiresAt: expiresAt,
+          resetOtp: null, // Clear other method
+        },
+      });
+      await sendResetLink(email, token);
+    } else {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const hashedOtp = await bcrypt.hash(otp, 10);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetOtp: hashedOtp,
+          resetExpiresAt: expiresAt,
+          resetToken: null, // Clear other method
+        },
+      });
+      await sendResetOtp(email, otp);
+    }
+
+    return { message: "RESET_CREDENTIAL_SENT" };
+  }
+
+  async resetPassword(data: { email: string; token?: string; otp?: string; password?: string }) {
+    const user = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (!user || !user.resetExpiresAt || user.resetExpiresAt < new Date()) {
+      throw new Error("INVALID_OR_EXPIRED_RESET_REQUEST");
+    }
+
+    if (data.token) {
+      if (user.resetToken !== data.token) {
+        throw new Error("INVALID_RESET_TOKEN");
+      }
+    } else if (data.otp) {
+      const isOtpValid = await bcrypt.compare(data.otp, user.resetOtp || "");
+      if (!isOtpValid) {
+        throw new Error("INVALID_RESET_OTP");
+      }
+    } else {
+      throw new Error("RESET_CREDENTIAL_REQUIRED");
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password || "", 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetOtp: null,
+        resetExpiresAt: null,
+      },
+    });
+
+    await prisma.activity.create({
+      data: {
+        type: "PASSWORD_RESET",
+        message: `Password reset successfully for ${user.email}`,
+        email: user.email,
+      },
+    });
+
+    return { message: "PASSWORD_RESET_SUCCESS" };
+  }
+
   async register(data: RegisterInput): Promise<RegisterResponse> {
     const userExists = await prisma.user.findUnique({
       where: { email: data.email },
@@ -126,6 +213,8 @@ export class AuthService {
       email: user.email,
       patientId: user.patient?.id ?? undefined,
       doctorId: user.doctor?.id ?? undefined,
+      age: user.patient?.age,
+      contact: user.patient?.contact || user.doctor?.contact,
     };
   }
 }

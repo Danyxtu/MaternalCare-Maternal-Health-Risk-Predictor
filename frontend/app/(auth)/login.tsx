@@ -10,9 +10,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Heart, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react-native";
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react-native";
 import { getLoginScreenStyles } from "#styles/login.styles.ts";
 import { useAuth } from "#context/authContext.tsx";
+import AppLogo from "#/src/components/AppLogo";
 
 const LoginScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -51,8 +52,8 @@ const LoginScreen: React.FC = () => {
       >
         {/* Top Section: Logo & Welcome Text */}
         <View style={styles.headerContainer}>
-          <View style={styles.logoBox}>
-            <Heart color="#FFFFFF" size={40} fill="#FFFFFF" />
+          <View style={{ backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+            <AppLogo size={200} borderColor="#E11D48" backgroundColor="transparent" borderWidth={4} imageScale={1.5} />
           </View>
           <Text style={styles.brandName}>MaternalCare</Text>
           <Text style={styles.welcomeText}>Welcome Back</Text>

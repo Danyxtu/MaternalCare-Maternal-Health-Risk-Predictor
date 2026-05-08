@@ -7,10 +7,10 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Heart } from "lucide-react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getWelcomeScreenStyles } from "#/src/styles/welcome.styles";
+import AppLogo from "#/src/components/AppLogo";
 
 const WelcomeScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -35,7 +35,7 @@ const WelcomeScreen: React.FC = () => {
           {/* We use a styled view as a placeholder for a nice vector illustration. 
               You can replace this with an actual <Image /> component later. */}
           <View style={styles.illustrationPlaceholder}>
-            <Heart color="#FB1554" size={80} fill="#FFE4E6" strokeWidth={1.5} />
+            <AppLogo size={180} borderColor="#E11D48" borderWidth={3} imageScale={1.1} />
           </View>
         </View>
 

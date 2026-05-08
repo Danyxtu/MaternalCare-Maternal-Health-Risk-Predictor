@@ -49,7 +49,6 @@ const PatientRecordsScreen: React.FC = () => {
       setPatients(response.data.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("Failed to fetch patients:", error);
       }
     } finally {
       if (showLoader) setIsLoading(false);

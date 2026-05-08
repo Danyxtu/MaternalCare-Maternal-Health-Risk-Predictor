@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Layout,
-  Heart,
   Activity,
   Droplet,
   Thermometer,
@@ -26,6 +25,7 @@ import { DrawerActions } from "@react-navigation/native";
 import api, { post } from "#/src/api/api";
 import { Modal } from "react-native";
 import QRCode from 'react-native-qrcode-svg';
+import AppLogo from "#/src/components/AppLogo";
 
 const PatientDashboard = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -151,7 +151,7 @@ const PatientDashboard = () => {
 
         {(!data) ? (
           <View style={{ alignItems: 'center', padding: 40, backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#F9FAFB', borderRadius: 20, borderStyle: 'dashed', borderWidth: 2, borderColor: '#CBD5E1' }}>
-            <Heart color="#CBD5E1" size={60} strokeWidth={1} />
+            <AppLogo size={80} borderColor="#E11D48" borderWidth={2} imageScale={1.1} />
             <Text style={{ marginTop: 16, fontSize: 16, fontWeight: '700', color: '#64748B', textAlign: 'center' }}>
               {error === "Patient record not found" ? "Account Initializing" : "No Clinical Data Yet"}
             </Text>
@@ -197,7 +197,7 @@ const PatientDashboard = () => {
             <View style={styles.gaugeGrid}>
               <View style={styles.gaugeCard}>
                 <Text style={styles.gaugeLabel}>Blood Pressure</Text>
-                <Heart color="#E11D48" size={24} />
+                <AppLogo size={40} borderColor="#E11D48" borderWidth={2} imageScale={1.1} />
                 <Text style={styles.gaugeValue}>
                   {data?.vitals?.systolic || "--"}/{data?.vitals?.diastolic || "--"}
                 </Text>

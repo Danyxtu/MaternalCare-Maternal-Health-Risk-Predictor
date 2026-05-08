@@ -79,7 +79,6 @@ const PatientRecordDetail: React.FC = () => {
       setPatient(response.data.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("Failed to fetch patient detail:", error);
       }
     }
   };

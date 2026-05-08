@@ -22,6 +22,11 @@ model User {
   role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
 
+  // Reset Password Fields
+  resetToken     String?
+  resetOtp       String?
+  resetExpiresAt DateTime?
+
   patient   Patient?
   doctor    Doctor?
 }

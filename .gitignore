@@ -8,7 +8,7 @@ backend/http:
 
 .venv
 
-maternal_care_test_cases_sample.xlsx
-maternalcare_admin_redesign.html
-VorTech Test Cases.pdf
-test-cases/
+# maternal_care_test_cases_sample.xlsx
+# # maternalcare_admin_redesign.html
+# VorTech Test Cases.pdf
+# test-cases/

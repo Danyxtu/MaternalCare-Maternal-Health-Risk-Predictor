@@ -238,5 +238,25 @@ export const getAlertDetailsScreenStyles = (theme: Theme) => {
       flex: 1,
       lineHeight: 22,
     },
+    reassessmentButton: {
+      backgroundColor: "#10B981",
+      borderRadius: 12,
+      paddingVertical: 16,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#10B981",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
+      marginBottom: 30,
+    },
+    reassessmentButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "700",
+      marginLeft: 8,
+    },
   });
 };

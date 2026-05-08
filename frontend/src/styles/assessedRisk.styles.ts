@@ -210,6 +210,44 @@ export const getAssessedRiskStyles = (theme: Theme) => {
       fontVariant: ["tabular-nums"],
     },
 
+    // ── Prediction Cards ────────────────────────────
+    predictionCard: {
+      borderRadius: 12,
+      borderLeftWidth: 4,
+      padding: 16,
+      marginBottom: 12,
+    },
+    predictionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    predictionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    predictionFactor: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginRight: 8,
+    },
+    badge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+    },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+    },
+    predictionDescription: {
+      fontSize: 14,
+      color: theme === "dark" ? "#CBD5E1" : "#475569",
+      lineHeight: 20,
+    },
+
     // ── Legend ───────────────────────────────────────
     legendItem: {
       flexDirection: "row",

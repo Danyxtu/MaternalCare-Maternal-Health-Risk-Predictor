@@ -38,3 +38,34 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, method } = req.body;
+    await authService.forgotPassword(email, method);
+    res.status(200).json({ message: "Reset credential sent successfully" });
+  } catch (error: any) {
+    if (error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({ message: "Email does not exist in our system." });
+    }
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    await authService.resetPassword(req.body);
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (error: any) {
+    const status = [
+      "INVALID_OR_EXPIRED_RESET_REQUEST",
+      "INVALID_RESET_TOKEN",
+      "INVALID_RESET_OTP",
+      "RESET_CREDENTIAL_REQUIRED",
+    ].includes(error.message)
+      ? 400
+      : 500;
+    res.status(status).json({ message: error.message });
+  }
+};

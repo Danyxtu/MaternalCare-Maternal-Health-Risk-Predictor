@@ -16,7 +16,6 @@ import {
   User,
   Calendar,
   Activity,
-  Heart,
   Droplet,
   Thermometer,
   Moon,
@@ -27,7 +26,8 @@ import { getNewAssessmentScreenStyles } from "#/src/styles/assessment.styles";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import api from "#api/api.ts";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import AppLogo from "#/src/components/AppLogo";
 
 // --- Types ---
 interface InputFieldProps {
@@ -111,6 +111,7 @@ const NewAssessmentScreen: React.FC = () => {
   const styles = getNewAssessmentScreenStyles(colorScheme);
   const navigation = useNavigation();
   const router = useRouter();
+  const params = useLocalSearchParams<{ patientId?: string; patientName?: string }>();
 
   // Stepper State
   const [currentStep, setCurrentStep] = useState(1);
@@ -216,6 +217,27 @@ const NewAssessmentScreen: React.FC = () => {
   const [folicSupplement, setFolicSupplement] = useState("0");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  useEffect(() => {
+    if (params.patientId && params.patientName) {
+      setPatientType("existing");
+      setSelectedPatientId(params.patientId);
+      setSelectedPatientName(params.patientName);
+      setExistingSearch(params.patientName);
+
+      // Auto-fetch patient details to get age
+      const fetchPatientAge = async () => {
+        try {
+          const res = await api.get(`/patients/${params.patientId}`);
+          if (res.data.data.age) {
+            setAge(String(res.data.data.age));
+          }
+        } catch (e) {
+        }
+      };
+      fetchPatientAge();
+    }
+  }, [params.patientId, params.patientName]);
 
   const resetForm = () => {
     setCurrentStep(1);
@@ -365,11 +387,8 @@ const NewAssessmentScreen: React.FC = () => {
       
       // Reset form data for next assessment
       resetForm();
-      
-      console.log("Prediction Response:", response.data);
     } catch (error: any) {
       if (error.status !== 401) {
-        console.error("API Error:", error);
       }
     } finally {
       setLoading(false);
@@ -587,7 +606,7 @@ const NewAssessmentScreen: React.FC = () => {
 
             <InputField
               label="Blood Pressure (Systolic)"
-              icon={<Heart color="#EF4444" size={16} />}
+              icon={<AppLogo size={16} />}
               placeholder="e.g., 120"
               helperText="Normal: 90-120 mmHg"
               value={systolic}
@@ -601,7 +620,7 @@ const NewAssessmentScreen: React.FC = () => {
 
             <InputField
               label="Blood Pressure (Diastolic)"
-              icon={<Heart color="#EF4444" size={16} />}
+              icon={<AppLogo size={16} />}
               placeholder="e.g., 80"
               helperText="Normal: 60-80 mmHg"
               value={diastolic}

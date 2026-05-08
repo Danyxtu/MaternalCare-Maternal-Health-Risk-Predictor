@@ -34,4 +34,6 @@ export interface LoginResponse {
   email: string;
   patientId: number | undefined;
   doctorId: number | undefined;
+  age?: number;
+  contact?: string | null;
 }

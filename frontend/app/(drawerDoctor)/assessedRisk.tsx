@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   Info,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react-native";
 import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
@@ -41,6 +42,81 @@ interface AssessmentResult {
   possible_maternal_risks?: string[];
   recommendations?: string[];
 }
+
+type RiskSeverity = "HIGH" | "MEDIUM" | "LOW";
+
+interface PredictionProp {
+  factor: string;
+  severity: RiskSeverity;
+  description: string;
+}
+
+// --- Theme Configuration ---
+const severityThemes: Record<string, any> = {
+  HIGH: {
+    bg: "#FFF1F2",
+    borderLeft: "#E11D48",
+    textMain: "#E11D48",
+    textDark: "#9F1239",
+    badgeBg: "#FECDD3",
+    icon: <AlertTriangle color="#E11D48" size={20} />,
+  },
+  MEDIUM: {
+    bg: "#FFFBEB",
+    borderLeft: "#F59E0B",
+    textMain: "#D97706",
+    textDark: "#92400E",
+    badgeBg: "#FDE68A",
+    icon: <AlertCircle color="#D97706" size={20} />,
+  },
+  LOW: {
+    bg: "#ECFDF5",
+    borderLeft: "#10B981",
+    textMain: "#10B981",
+    textDark: "#065F46",
+    badgeBg: "#D1FAE5",
+    icon: <CheckCircle2 color="#10B981" size={20} />,
+  },
+};
+
+// --- Sub-Components ---
+
+const PredictionCard: React.FC<PredictionProp> = ({
+  factor,
+  severity,
+  description,
+}) => {
+  const theme = severityThemes[severity] || severityThemes.LOW;
+  const colorScheme = useColorScheme() ?? "light";
+  const styles = getAssessedRiskStyles(colorScheme);
+  const textColor = theme.textDark;
+
+  return (
+    <View
+      style={[
+        styles.predictionCard,
+        { backgroundColor: theme.bg, borderLeftColor: theme.borderLeft },
+      ]}
+    >
+      <View style={styles.predictionHeader}>
+        <View style={styles.predictionTitleRow}>
+          <Text style={[styles.predictionFactor, { color: textColor }]}>
+            {factor}
+          </Text>
+          <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
+            <Text style={[styles.badgeText, { color: theme.textDark }]}>
+              {severity}
+            </Text>
+          </View>
+        </View>
+        {theme.icon}
+      </View>
+      <Text style={[styles.predictionDescription, { color: textColor }]}>
+        {description}
+      </Text>
+    </View>
+  );
+};
 
 // --- Risk Config ---
 const getRiskConfig = (predictedClass: string) => {
@@ -76,121 +152,6 @@ const getRiskConfig = (predictedClass: string) => {
     description:
       "The patient's vitals are within acceptable ranges. Routine monitoring is recommended.",
   };
-};
-
-// --- Feature Row Component ---
-const FeatureRow: React.FC<{
-  feature: Feature;
-  index: number;
-  styles: ReturnType<typeof getAssessedRiskStyles>;
-  colorScheme: "light" | "dark";
-  isLowRisk: boolean;
-  maxWeight: number;
-}> = ({ feature, index, styles, colorScheme, isLowRisk, maxWeight }) => {
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 350,
-        delay: index * 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 350,
-        delay: index * 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  const isIncreased = feature.impact === "Increased";
-  const absWeight = Math.abs(feature.weight);
-
-  // Normalize bar width based on max weight in the set
-  const barWidth = maxWeight > 0 ? (absWeight / maxWeight) * 100 : 0;
-
-  // Logic:
-  // If Low Risk: Positive (Increased) is GREEN (Good), Negative (Decreased) is RED (Bad)
-  // If High/Mid Risk: Positive (Increased) is RED (Bad), Negative (Decreased) is GREEN (Good)
-  const isGood = isLowRisk ? isIncreased : !isIncreased;
-
-  const impactColor = isGood ? "#10B981" : "#E11D48";
-  const barColor = isGood ? "#D1FAE5" : "#FEE2E2";
-  const barFillColor = isGood ? "#10B981" : "#E11D48";
-
-  return (
-    <Animated.View
-      style={[
-        styles.featureRow,
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-      ]}
-    >
-      <View style={styles.featureHeader}>
-        <View style={styles.featureLeft}>
-          {isIncreased ? (
-            <TrendingUp color={impactColor} size={16} />
-          ) : (
-            <TrendingDown color={impactColor} size={16} />
-          )}
-          <Text style={styles.featureCondition}>{feature.condition}</Text>
-        </View>
-        <View
-          style={[
-            styles.impactBadge,
-            { backgroundColor: isGood ? "#ECFDF5" : "#FFF1F2" },
-          ]}
-        >
-          <Text style={[styles.impactBadgeText, { color: impactColor }]}>
-            {isLowRisk
-              ? isIncreased
-                ? "Good"
-                : "Needs Attention"
-              : isIncreased
-                ? "Risk Factor"
-                : "Mitigating"}
-          </Text>
-        </View>
-      </View>
-
-      {/* Weight bar */}
-      <View style={[styles.barTrack, { backgroundColor: barColor }]}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${Math.max(barWidth, 2)}%` as any, // Minimum 2% visibility
-              backgroundColor: barFillColor,
-            },
-          ]}
-        />
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text style={styles.featureWeight}>
-          Weight: {feature.weight > 0 ? "+" : ""}
-          {feature.weight.toFixed(4)}
-        </Text>
-        <Text
-          style={[
-            styles.featureWeight,
-            { fontWeight: "600", color: impactColor },
-          ]}
-        >
-          {Math.round(barWidth)}% Influence
-        </Text>
-      </View>
-    </Animated.View>
-  );
 };
 
 // --- Main Screen ---
@@ -229,6 +190,68 @@ const AssessedRiskScreen: React.FC = () => {
   const riskConfig = getRiskConfig(result?.predicted_class ?? "");
   const probabilityPercent = ((result?.probability ?? 0) * 100).toFixed(1);
   const isLowRisk = result?.predicted_class?.toLowerCase().includes("low");
+
+  // Derive human-readable predictions from physiological data
+  const ageVal = Number(physiologicalData[0]);
+  const systolicVal = Number(physiologicalData[1]);
+  const diastolicVal = Number(physiologicalData[2]);
+  const bsVal = Number(physiologicalData[3]);
+  const tempVal = Number(physiologicalData[4]);
+  const hrVal = Number(physiologicalData[5]);
+
+  const predictions: PredictionProp[] = [
+    {
+      factor: "Age",
+      severity: ageVal > 35 ? "HIGH" : ageVal > 30 ? "MEDIUM" : "LOW",
+      description:
+        ageVal > 35
+          ? "Advanced maternal age (>35) associated with higher risks"
+          : ageVal > 30
+            ? "Maternal age is slightly elevated"
+            : "Age within normal maternal range",
+    },
+    {
+      factor: "Blood Pressure",
+      severity:
+        systolicVal > 140 || diastolicVal > 90
+          ? "HIGH"
+          : systolicVal > 130 || diastolicVal > 80
+            ? "MEDIUM"
+            : "LOW",
+      description:
+        systolicVal > 140 || diastolicVal > 90
+          ? `Hypertension detected (${systolicVal}/${diastolicVal}) - risk of preeclampsia`
+          : systolicVal > 130 || diastolicVal > 80
+            ? `Elevated BP (${systolicVal}/${diastolicVal}) - requires monitoring`
+            : "Blood pressure is within normal range",
+    },
+    {
+      factor: "Blood Sugar",
+      severity: bsVal > 11 ? "HIGH" : bsVal > 7.8 ? "MEDIUM" : "LOW",
+      description:
+        bsVal > 11
+          ? `Critically high blood sugar (${bsVal}) - risk of gestational diabetes`
+          : bsVal > 7.8
+            ? `Elevated blood sugar (${bsVal}) - monitor glucose levels`
+            : "Blood sugar levels are stable",
+    },
+    {
+      factor: "Heart Rate",
+      severity: hrVal > 100 || hrVal < 60 ? "MEDIUM" : "LOW",
+      description:
+        hrVal > 100 || hrVal < 60
+          ? `Heart rate (${hrVal} bpm) is outside normal range`
+          : "Heart rate is normal",
+    },
+    {
+      factor: "Body Temperature",
+      severity: tempVal > 100.4 || tempVal < 97 ? "MEDIUM" : "LOW",
+      description:
+        tempVal > 100.4 || tempVal < 97
+          ? `Body temperature (${tempVal} °F) is abnormal`
+          : "Body temperature is normal",
+    },
+  ];
 
   // Calculate maximum weight for normalization
   const maxWeight = Math.max(
@@ -385,17 +408,6 @@ const AssessedRiskScreen: React.FC = () => {
       router.push("/(drawerDoctor)/(tabs)/dashboard");
     }
   };
-  const formatFeature = (feature: string) => {
-    if (!feature) return "";
-
-    // Removes "num_" prefix
-    const stripped = feature.replace("num__", "");
-
-    // If you actually want Title Case, add this:
-    // return stripped.charAt(0).toUpperCase() + stripped.slice(1);
-
-    return stripped;
-  };
 
   return (
     <SafeAreaView
@@ -475,35 +487,19 @@ const AssessedRiskScreen: React.FC = () => {
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Activity color="#E11D48" size={20} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>Contributing Factors</Text>
+            <Text style={styles.sectionTitle}>Explainable Risk Predictions</Text>
           </View>
 
           <Text style={styles.sectionSubtitle}>
-            {isLowRisk
-              ? "Key factors supporting the healthy status and areas that could be further optimized."
-              : "Each factor's influence on the predicted risk classification, derived from AI explainability analysis."}
+            Detailed analysis of each physiological factor contributing to the
+            overall risk assessment.
           </Text>
 
           <View style={styles.divider} />
 
-          {(result?.features ?? []).map((feature, index) => {
-            const formattedFeature = {
-              ...feature,
-              condition: formatFeature(feature.condition),
-            };
-
-            return (
-              <FeatureRow
-                key={index}
-                feature={formattedFeature}
-                index={index}
-                styles={styles}
-                colorScheme={colorScheme}
-                isLowRisk={isLowRisk}
-                maxWeight={maxWeight}
-              />
-            );
-          })}
+          {predictions.map((pred, index) => (
+            <PredictionCard key={index} {...pred} />
+          ))}
         </View>
 
         {/* ── Possible Maternal Risks Card ── */}
